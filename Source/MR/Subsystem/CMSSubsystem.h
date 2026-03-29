@@ -22,11 +22,6 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	/**
-	 * DataTable을 이름으로 직접 등록한다.
-	 * 이미 같은 이름이 있으면 덮어쓴다.
-	 */
-	void RegisterTable(FName TableName, UDataTable* Table);
 
 	/** 등록된 DataTable을 반환한다. 없으면 nullptr. */
 	UDataTable* GetTable(FName TableName) const;
@@ -52,15 +47,11 @@ public:
 	FMonsterTableRow* GetMonsterRow(int32 Type) const;
 
 protected:
-	/** 몬스터 DataTable 에셋. BP 서브클래스에서 설정한다. */
-	UPROPERTY(EditDefaultsOnly, Category = "CMS|Tables")
-	TSoftObjectPtr<UDataTable> MonsterTable;
-
 	/**
 	 * 에디터에서 BP 서브클래스를 통해 설정하는 DataTable 목록.
-	 * Key: 조회에 쓸 이름, Value: DataTable 에셋 경로 (Soft Reference)
+	 * Key: 조회에 쓸 이름 (e.g. "Monster"), Value: DataTable 에셋 경로 (Soft Reference)
 	 */
-	UPROPERTY(EditDefaultsOnly, Category = "CMS|Tables")
+	UPROPERTY(EditDefaultsOnly, Category = "CMS")
 	TMap<FName, TSoftObjectPtr<UDataTable>> TablePaths;
 
 private:
