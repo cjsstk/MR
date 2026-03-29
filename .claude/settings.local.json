@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"GameplayAbilities\\\\|GameplayTasks\\\\|GameplayTags\" /e/Work/MR/Source --include=*.cs --include=*.h --include=*.cpp)",
+      "Bash(grep -rl ? e:/Work/MR/Source --include=*.h --include=*.cpp --include=*.cs)",
+      "Bash(grep -rP \"[\\\\x80-\\\\xFF]{3,}\" \"e:/Work/MR/Source\" --include=\"*.cs\" --include=\"*.h\" --include=\"*.cpp\" -l)",
+      "Bash(powershell -Command \":*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

@@ -8,10 +8,10 @@ public class MRStore : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        // ÀÌ ¸ğµâÀ» ¾²´Â °÷¿¡¼­µµ ÇÊ¿äÇÑ °Í
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine"});
+        // ì™¸ë¶€ì— ê³µê°œë˜ëŠ” ì¢…ì†ì„±
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "UMG" });
 
-        // ÀÌ ¸ğµâ ³»ºÎ¿¡¼­¸¸ »ç¿ëÇÏ´Â °Í
+        // ì´ ëª¨ë“ˆ ë‚´ë¶€ì—ì„œë§Œ ì‚¬ìš©í•˜ëŠ” ì¢…ì†ì„±
         //PrivateDependencyModuleNames.AddRange(
         //    new string[]
         //    {

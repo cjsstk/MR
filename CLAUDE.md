@@ -1,0 +1,24 @@
+# Project: MR
+
+## 프로젝트 개요
+- 언리얼 엔진 5.5, C++20
+- 장르: 3인칭 액션 RPG
+- 몬스터헌터 라이즈 같은  [마을 - 필드] 구조
+- 싱글 플레이
+
+## 코딩 컨벤션
+- 언리얼 코딩 표준 준수 (UE Coding Standard)
+
+## 주요 모듈 구조
+- Source/MR/Subsystem - CMS, GameResource 관련
+- Source/MRStore - MVVM 구조의 Base 모듈 (다른 프로젝트에 복붙하기 쉽게)
+- Source/MR/Store - 이 프로젝트에서만 쓰이는 Store는 여기에 추가될 예정
+- GAS 어빌리티 시스템 사용
+
+## 자주 쓰는 패턴
+- 컴포넌트는 항상 ObjectInitializer로 생성
+
+## 구현 방식
+- 임시, 간략한 구조가 아닌 실제로 동작하는 코드로 구현.
+- 복잡한 구현에는 주석을 달면 좋음.
+- 성능, 최적화, 가독성, 코드 사용성에 신경 쓰도록.
