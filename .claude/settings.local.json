@@ -7,7 +7,10 @@
       "Bash(powershell -Command \":*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(find e:/UE_5.5 -path */AbilitySystemInterface.h -type f)",
+      "Bash(find e:/UE_5.5 -path */AbilitySystemComponent.h -type f)",
+      "Bash(find e:/UE_5.5 -path */AttributeSet.h -type f)"
     ]
   }
 }

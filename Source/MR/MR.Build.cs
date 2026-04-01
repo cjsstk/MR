@@ -8,9 +8,9 @@ public class MR : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "MRStore", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "MRStore", "UMG", "GameplayAbilities", "GameplayTags", "GameplayTasks" });
 
-        PrivateIncludePaths.AddRange(new string[] { "MR", "MR/Subsystem", "MR/Widget", "MR/Store" });
+        PrivateIncludePaths.AddRange(new string[] { "MR", "MR/Subsystem", "MR/Widget", "MR/Store", "MR/Action", "MR/Character", "MR/GAS", "MR/GAS/Attribute", "MR/GAS/Ability" });
 
     }
 }

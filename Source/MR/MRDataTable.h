@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "MREnum.h"
 #include "MRDataTable.generated.h"
 
 /** 몬스터 데이터 테이블 Row. RowName = 몬스터 ID (e.g. "Rathalos") */

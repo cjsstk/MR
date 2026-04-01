@@ -2,7 +2,7 @@
 
 #include "StoreBase.h"
 
-FDelegateHandle UStoreBase::Subscribe(FOnStoreStateChanged::FDelegate&& Delegate)
+FDelegateHandle UStoreBase::Subscribe(FOnStoreStateChanged::FDelegate &&Delegate)
 {
 	return OnStateChanged.Add(MoveTemp(Delegate));
 }
@@ -12,7 +12,7 @@ void UStoreBase::Unsubscribe(FDelegateHandle Handle)
 	OnStateChanged.Remove(Handle);
 }
 
-void UStoreBase::UnsubscribeAll(const void* UserObject)
+void UStoreBase::UnsubscribeAll(const void *UserObject)
 {
 	OnStateChanged.RemoveAll(UserObject);
 }

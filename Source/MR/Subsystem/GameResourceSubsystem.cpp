@@ -2,6 +2,7 @@
 
 
 #include "GameResourceSubsystem.h"
+#include "Animation/BlendSpace.h"
 
 void UGameResourceSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -83,4 +84,19 @@ void UGameResourceSubsystem::Release(const FSoftObjectPath& Path)
 		ActiveHandles.Remove(Path);
 	}
 	CachedAssets.Remove(Path);
+}
+
+void UGameResourceSubsystem::AsyncLoadWeaponLocomotionBS(EMRWeaponType WeaponType, TFunction<void(UBlendSpace*)> Callback)
+{
+	const FWeaponAnimConfig* Config = WeaponAnimConfigs.Find(WeaponType);
+	if (!Config || Config->LocomotionBlendSpace.IsNull())
+	{
+		Callback(nullptr);
+		return;
+	}
+
+	AsyncLoad(Config->LocomotionBlendSpace.ToSoftObjectPath(), [Callback = MoveTemp(Callback)](UObject* Loaded)
+	{
+		Callback(Cast<UBlendSpace>(Loaded));
+	});
 }

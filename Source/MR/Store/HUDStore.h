@@ -4,23 +4,24 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "MRStore/StoreBase.h"
 #include "HUDStore.generated.h"
 
 class UCharacterStore;
+class UActionDispatcher;
 
 /**
  * UHUDStore
  *
- * HUD에 필요한 콘텐츠 Store들을 생성하고 소유하는 매니저.
- * UStoreBase를 상속하지 않으며, 데이터를 직접 보유하지 않는다.
- * 각 콘텐츠 Store는 UStoreBase를 상속한 별도 클래스로 구현된다.
+ * HUD에 필요한 콘텐츠 Store들을 생성·소유하는 매니저.
+ * Initialize에서 UActionDispatcher에 각 Store의 핸들러를 등록한다.
  *
- * 접근 방법:
- *   GetHUDStore(WorldContextObject)   // Sugar.h
- *   GetGameInstance()->GetSubsystem<UHUDStore>()
- *
- * 새로운 HUD 데이터가 필요할 경우 UStoreBase를 상속하는 Store를 추가하고
- * 이 클래스에 멤버와 Getter를 추가한다.
+ * ── Store 추가 방법 ───────────────────────────────────────────
+ *  1. UStoreBase를 상속하는 UXxxStore 클래스를 생성한다.
+ *  2. ActionTypes.h에 액션 타입을 추가하고 Action.h에 팩토리 함수를 추가한다.
+ *  3. UXxxStore에 RegisterActionHandlers / UnregisterActionHandlers를 구현한다.
+ *  4. Initialize에서 RegisterStore<UXxxStore>() 호출 후 핸들러를 등록한다.
+ * ──────────────────────────────────────────────────────────────
  */
 UCLASS()
 class MR_API UHUDStore : public UGameInstanceSubsystem
@@ -28,18 +29,31 @@ class MR_API UHUDStore : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
-	// --- UGameInstanceSubsystem ---
-
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
 	// --- Store Getters ---
 
-	/** 캐릭터 HP, 스태미나 등의 상태를 담고 있는 Store */
-	UFUNCTION(BlueprintCallable, Category = "HUD|Store")
-	UCharacterStore* GetCharacterStore() const { return CharacterStore; }
+	UCharacterStore* GetCharacterStore() const { return GetStore<UCharacterStore>(); }
+
+	template<typename T>
+	T* GetStore() const
+	{
+		static_assert(TIsDerivedFrom<T, UStoreBase>::Value, "T must derive from UStoreBase");
+		TObjectPtr<UStoreBase> const* Found = Stores.Find(T::StaticClass());
+		return Found ? Cast<T>(Found->Get()) : nullptr;
+	}
 
 private:
+	template<typename T>
+	T* RegisterStore()
+	{
+		static_assert(TIsDerivedFrom<T, UStoreBase>::Value, "T must derive from UStoreBase");
+		T* Store = NewObject<T>(this);
+		Stores.Add(T::StaticClass(), Store);
+		return Store;
+	}
+
 	UPROPERTY()
-	TObjectPtr<UCharacterStore> CharacterStore;
+	TMap<UClass*, TObjectPtr<UStoreBase>> Stores;
 };

@@ -8,6 +8,7 @@ class UCMSSubsystem;
 class UGameResourceSubsystem;
 class UHUDStore;
 class UCharacterStore;
+class UActionDispatcher;
 
 UCMSSubsystem* GetCMS(const UObject* InObject);
 UGameResourceSubsystem* GetGameResource(const UObject* InObject);
@@ -17,3 +18,6 @@ UHUDStore* GetHUDStore(const UObject* InObject);
 
 /** CharacterStore를 반환한다. GetHUDStore(this)->GetCharacterStore()의 단축 함수. */
 UCharacterStore* GetCharacterStore(const UObject* InObject);
+
+/** ActionDispatcher를 반환한다. 액션 디스패치 시 사용. */
+UActionDispatcher* GetActionDispatcher(const UObject* InObject);

@@ -6,6 +6,7 @@
 #include "Subsystem/GameResourceSubsystem.h"
 #include "Store/HUDStore.h"
 #include "Store/CharacterStore.h"
+#include "Action/Action.h"
 #include "Engine/GameInstance.h"
 
 namespace
@@ -59,4 +60,10 @@ UCharacterStore* GetCharacterStore(const UObject* InObject)
 {
 	UHUDStore* HUDStore = GetHUDStore(InObject);
 	return HUDStore ? HUDStore->GetCharacterStore() : nullptr;
+}
+
+UActionDispatcher* GetActionDispatcher(const UObject* InObject)
+{
+	UGameInstance* GI = GetGameInstance(InObject);
+	return GI ? GI->GetSubsystem<UActionDispatcher>() : nullptr;
 }
