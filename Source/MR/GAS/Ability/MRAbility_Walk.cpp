@@ -2,11 +2,7 @@
 
 #include "MRAbility_Walk.h"
 #include "MRGameplayTags.h"
-#include "MRPlayerCharacter.h"
-#include "Sugar.h"
-#include "GameResourceSubsystem.h"
 #include "AbilitySystemComponent.h"
-#include "Animation/BlendSpace.h"
 
 UMRAbility_Walk::UMRAbility_Walk()
 {
@@ -34,9 +30,6 @@ void UMRAbility_Walk::ActivateAbility(
 	{
 		ASC->AddLooseGameplayTag(MRGameplayTags::Character_State_Moving);
 	}
-
-	// 현재 무기 타입에 맞는 애니메이션 비동기 로드
-	RequestWeaponAnimLoad();
 }
 
 void UMRAbility_Walk::EndAbility(
@@ -53,39 +46,4 @@ void UMRAbility_Walk::EndAbility(
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-}
-
-void UMRAbility_Walk::RequestWeaponAnimLoad()
-{
-	AMRPlayerCharacter* Player = GetPlayerCharacter();
-	if (!Player)
-	{
-		return;
-	}
-
-	UGameResourceSubsystem* GameRes = GetGameResource(Player);
-	if (!GameRes)
-	{
-		return;
-	}
-
-	TWeakObjectPtr<UMRAbility_Walk> WeakThis(this);
-
-	GameRes->AsyncLoadWeaponLocomotionBS(Player->GetWeaponType(), [WeakThis](UBlendSpace* BlendSpace)
-	{
-		if (WeakThis.IsValid())
-		{
-			WeakThis->ApplyLocomotionBlendSpace(BlendSpace);
-		}
-	});
-}
-
-void UMRAbility_Walk::ApplyLocomotionBlendSpace(UBlendSpace* BlendSpace)
-{
-	CachedLocomotionBS = BlendSpace;
-
-	if (AMRPlayerCharacter* Player = GetPlayerCharacter())
-	{
-		Player->SetLocomotionBlendSpace(BlendSpace);
-	}
 }

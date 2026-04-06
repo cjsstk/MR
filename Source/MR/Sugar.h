@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 
 class UCMSSubsystem;
-class UGameResourceSubsystem;
+class UMRGameResource;
 class UHUDStore;
 class UCharacterStore;
 class UActionDispatcher;
 
 UCMSSubsystem* GetCMS(const UObject* InObject);
-UGameResourceSubsystem* GetGameResource(const UObject* InObject);
+UMRGameResource* GetGameResource(const UObject* InObject);
 
 /** HUDStore 매니저를 반환한다. GameInstance 생성 이후 유효. */
 UHUDStore* GetHUDStore(const UObject* InObject);

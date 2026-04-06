@@ -4,6 +4,7 @@
 #include "Sugar.h"
 #include "Subsystem/CMSSubsystem.h"
 #include "Subsystem/GameResourceSubsystem.h"
+#include "MRGameInstance.h"
 #include "Store/HUDStore.h"
 #include "Store/CharacterStore.h"
 #include "Action/Action.h"
@@ -28,10 +29,10 @@ UCMSSubsystem* GetCMS(const UObject* InObject)
 	return GI ? GI->GetSubsystem<UCMSSubsystem>() : nullptr;
 }
 
-UGameResourceSubsystem* GetGameResource(const UObject* InObject)
+UMRGameResource* GetGameResource(const UObject* InObject)
 {
-	UGameInstance* GI = GetGameInstance(InObject);
-	return GI ? GI->GetSubsystem<UGameResourceSubsystem>() : nullptr;
+	UMRGameInstance* GI = Cast<UMRGameInstance>(GetGameInstance(InObject));
+	return GI ? GI->GetGameResource() : nullptr;
 }
 
 UHUDStore* GetHUDStore(const UObject* InObject)

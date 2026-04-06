@@ -14,8 +14,10 @@ namespace MRGameplayTags
 {
 	// ─── 캐릭터 상태 ─────────────────────────────────────────────────────────
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Moving)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Sprinting)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Dead)
 
 	// ─── 어빌리티 식별 ───────────────────────────────────────────────────────
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Walk)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Sprint)
 }

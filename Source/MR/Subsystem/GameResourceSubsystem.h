@@ -3,39 +3,33 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Subsystems/GameInstanceSubsystem.h"
 #include "Engine/StreamableManager.h"
-#include "MREnum.h"
+#include "WeaponAnimConfigData.h"
 #include "GameResourceSubsystem.generated.h"
 
 class UBlendSpace;
 class UAnimSequence;
 
-// ─── 데이터 구조 ────────────────────────────────────────────────────────────
-
-/**
- * 무기 타입별 애니메이션 에셋 세트.
- * UGameResourceSubsystem::WeaponAnimConfigs에서 EMRWeaponType을 키로 설정한다.
- */
-USTRUCT(BlueprintType)
-struct MR_API FWeaponAnimConfig
+/** AsyncLoadWeaponJumpAnims 콜백용. 세 애셋이 모두 로드된 뒤 한 번 호출된다. */
+USTRUCT()
+struct MR_API FWeaponJumpAnims
 {
 	GENERATED_BODY()
 
-	/** 이동 방향+속도 기반 블렌드 스페이스 (보행~달리기 통합) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
-	TSoftObjectPtr<UBlendSpace> LocomotionBlendSpace;
+	UPROPERTY()
+	TObjectPtr<UAnimSequence> Start;
 
-	/** 대기 상태 애니메이션 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
-	TSoftObjectPtr<UAnimSequence> IdleAnimation;
+	UPROPERTY()
+	TObjectPtr<UAnimSequence> Loop;
+
+	UPROPERTY()
+	TObjectPtr<UAnimSequence> End;
 };
 
-// ─── 서브시스템 ─────────────────────────────────────────────────────────────
-
 /**
- * FStreamableManager 기반 비동기 에셋 로딩 및 캐싱을 담당하는 서브시스템.
- * 애니메이션, 사운드 등 게임 에셋의 로드/캐시/해제를 관리한다.
+ * 게임에서 쓰이는 애니메이션, 사운드 등 에셋의 로드/캐시/해제를 담당한다.
+ * UMRGameInstance가 소유하며, GetGameResource(this)로 어디서든 접근한다.
+ * BP 서브클래스(BP_GameResource)에서 DataAsset을 지정하고 필요 시 새 설정을 추가한다.
  *
  * 사용 예:
  *   GetGameResource(this)->AsyncLoad(MeshPath, [](UObject* Loaded)
@@ -43,47 +37,49 @@ struct MR_API FWeaponAnimConfig
  *       UStaticMesh* Mesh = Cast<UStaticMesh>(Loaded);
  *   });
  */
-UCLASS()
-class MR_API UGameResourceSubsystem : public UGameInstanceSubsystem
+UCLASS(Blueprintable)
+class MR_API UMRGameResource : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	virtual void Initialize(FSubsystemCollectionBase &Collection) override;
-	virtual void Deinitialize() override;
+	/** GameInstance::Shutdown에서 호출. 진행 중인 로딩 요청을 모두 취소한다. */
+	void Deinitialize();
 
 	/**
 	 * 에셋을 비동기 로드한다.
 	 * 이미 캐시된 경우 즉시 콜백을 호출한다.
-	 * 동일 경로에 대해 로딩이 진행 중이더라도 중복 요청이 가능하며, 완료 시 모두 콜백된다.
 	 * @param Path      로드할 에셋의 Soft Object Path
-	 * @param Callback  로드 완료 시 호출되는 함수. 로드 실패 시 nullptr이 전달된다.
+	 * @param Callback  로드 완료 시 호출. 실패 시 nullptr 전달.
 	 */
-	void AsyncLoad(const FSoftObjectPath &Path, TFunction<void(UObject *)> Callback);
+	void AsyncLoad(const FSoftObjectPath& Path, TFunction<void(UObject*)> Callback);
 
-	/**
-	 * 캐시에서 에셋을 즉시 반환한다.
-	 * 아직 로드되지 않은 경우 nullptr를 반환한다.
-	 */
-	UObject *GetCached(const FSoftObjectPath &Path) const;
+	/** 캐시에서 에셋을 즉시 반환. 미로드 시 nullptr. */
+	UObject* GetCached(const FSoftObjectPath& Path) const;
 
 	/** 캐시 및 진행 중인 핸들에서 해당 에셋을 제거한다. */
-	void Release(const FSoftObjectPath &Path);
+	void Release(const FSoftObjectPath& Path);
+
+	/** WeaponType에 해당하는 LocomotionBlendSpace를 비동기 로드한다. */
+	void AsyncLoadWeaponLocomotionBS(EMRWeaponType WeaponType, TFunction<void(UBlendSpace*)> Callback);
+
+	/** WeaponType에 해당하는 IdleAnimation을 비동기 로드한다. */
+	void AsyncLoadWeaponIdleAnim(EMRWeaponType WeaponType, TFunction<void(UAnimSequence*)> Callback);
 
 	/**
-	 * 무기 타입에 해당하는 LocomotionBlendSpace를 비동기 로드한다.
-	 * WeaponAnimConfigs에 해당 타입이 없거나 경로가 비어있으면 nullptr 콜백.
+	 * 무기 타입에 해당하는 점프 애니메이션 3종(Start/Loop/End)을 비동기 로드한다.
+	 * 셋 모두 로드 완료된 시점에 콜백이 한 번 호출된다.
 	 */
-	void AsyncLoadWeaponLocomotionBS(EMRWeaponType WeaponType, TFunction<void(UBlendSpace *)> Callback);
+	void AsyncLoadWeaponJumpAnims(EMRWeaponType WeaponType, TFunction<void(FWeaponJumpAnims)> Callback);
 
-	// ─── 무기 애니메이션 설정 (BP 서브클래스에서 에셋 지정) ──────────────────
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponAnimation")
-	TMap<EMRWeaponType, FWeaponAnimConfig> WeaponAnimConfigs;
+	// ─── 설정 (BP_GameResource에서 지정, 필요 시 새 DataAsset 추가) ──────────
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config")
+	TObjectPtr<UWeaponAnimConfigData> WeaponAnimConfigData;
 
 private:
 	FStreamableManager StreamableManager;
 
-	/** 로드 완료된 에셋 캐시. GC 방지를 위해 TObjectPtr 대신 TWeakObjectPtr + 핸들로 관리. */
+	/** 로드 완료된 에셋 캐시. GC 방지용 핸들과 함께 관리. */
 	TMap<FSoftObjectPath, TWeakObjectPtr<UObject>> CachedAssets;
 
 	/** 로딩 중인 핸들. 완료 전 GC되지 않도록 TSharedPtr로 보관. */
