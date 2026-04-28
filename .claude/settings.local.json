@@ -10,7 +10,13 @@
       "Bash(git push:*)",
       "Bash(find e:/UE_5.5 -path */AbilitySystemInterface.h -type f)",
       "Bash(find e:/UE_5.5 -path */AbilitySystemComponent.h -type f)",
-      "Bash(find e:/UE_5.5 -path */AttributeSet.h -type f)"
+      "Bash(find e:/UE_5.5 -path */AttributeSet.h -type f)",
+      "mcp__ide__getDiagnostics",
+      "Read(//mnt/e/Work/**)",
+      "Bash(\"C:/Program Files/Epic Games/UE_5.5/Engine/Build/BatchFiles/Build.bat\" MREditor Win64 Development -Project=\"E:/Work/MR/MR.uproject\")",
+      "Bash(cmd.exe /c '\"C:\\\\Program Files\\\\Epic Games\\\\UE_5.5\\\\Engine\\\\Build\\\\BatchFiles\\\\Build.bat\" MREditor Win64 Development -Project=\"E:\\\\Work\\\\MR\\\\MR.uproject\" 2>&1')",
+      "Bash(python3 *)",
+      "Bash(powershell -Command ' *)"
     ]
   }
 }

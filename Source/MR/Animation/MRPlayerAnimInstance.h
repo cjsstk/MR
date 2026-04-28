@@ -6,43 +6,27 @@
 #include "MRBaseAnimInstance.h"
 #include "MRPlayerAnimInstance.generated.h"
 
-class UAnimSequence;
-class UBlendSpace;
-
 /**
  * 플레이어 전용 AnimInstance.
- * 무기 교체 시 LoadAndApplyWeaponAnims(Character)에서 각 변수를 직접 세팅한다.
+ * Ground/Jump 애니메이션은 무기별 Linked Anim Layer(ABP_OneHandedSword 등)가 담당한다.
  *
- * AnimBP State Machine 구조:
- *   Ground ┬─ Idle State       : Sequence Player  ← IdleAnimation
- *          └─ Locomotion State : BlendSpace Player ← LocomotionBlendSpace (Speed 기반)
- *   Jump   ┬─ JumpStart        : Sequence Player  ← JumpStartAnimation  (재생 완료 → JumpLoop)
- *          ├─ JumpLoop         : Sequence Player  ← JumpLoopAnimation   (bIsFalling=false → JumpEnd)
- *          └─ JumpEnd          : Sequence Player  ← JumpEndAnimation    (재생 완료 → Ground)
- *   전환 조건: bIsFalling(true) → Jump, bIsFalling(false) → Ground
+ * 록온/조준 모드 전용 파라미터:
+ *  - VelocityForward / VelocityRight: 캐릭터 로컬 좌표 속도 (MaxWalkSpeed 기준 -1~1 정규화)
+ *  - 2D BlendSpace의 X(좌우 stafe), Y(전후) 입력으로 직접 사용한다.
  */
 UCLASS()
 class MR_API UMRPlayerAnimInstance : public UMRBaseAnimInstance
 {
 	GENERATED_BODY()
 
-public:
-	// ─── Ground 애니메이션 ───────────────────────────────────────────────────
+protected:
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Animation|Weapon")
-	TObjectPtr<UAnimSequence> IdleAnimation;
+	/** 캐릭터 로컬 전후 속도. MaxWalkSpeed 기준 -1(후진)~1(전진). 조준 모드 2D BlendSpace 입력. */
+	UPROPERTY(BlueprintReadOnly, Category = "Animation|Targeting")
+	float VelocityForward = 0.f;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Animation|Weapon")
-	TObjectPtr<UBlendSpace> LocomotionBlendSpace;
-
-	// ─── Jump 애니메이션 ─────────────────────────────────────────────────────
-
-	UPROPERTY(BlueprintReadOnly, Category = "Animation|Weapon")
-	TObjectPtr<UAnimSequence> JumpStartAnimation;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Animation|Weapon")
-	TObjectPtr<UAnimSequence> JumpLoopAnimation;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Animation|Weapon")
-	TObjectPtr<UAnimSequence> JumpEndAnimation;
+	/** 캐릭터 로컬 좌우 속도. MaxWalkSpeed 기준 -1(좌)~1(우). 조준 모드 2D BlendSpace 입력. */
+	UPROPERTY(BlueprintReadOnly, Category = "Animation|Targeting")
+	float VelocityRight = 0.f;
 };

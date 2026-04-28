@@ -45,3 +45,38 @@ FMonsterTableRow* UCMSSubsystem::GetMonsterRow(int32 Type) const
 {
 	return GetRow<FMonsterTableRow>(TEXT("Monster"), FName(FString::FromInt(Type)));
 }
+
+FDropTableRow* UCMSSubsystem::GetDropTableRow(FName DropTableId) const
+{
+	return GetRow<FDropTableRow>(TEXT("Drop"), DropTableId);
+}
+
+FItemTableRow* UCMSSubsystem::GetItemRow(FName ItemId) const
+{
+	return GetRow<FItemTableRow>(TEXT("Item"), ItemId);
+}
+
+FDecorationTableRow* UCMSSubsystem::GetDecorationRow(FName DecoId) const
+{
+	return GetRow<FDecorationTableRow>(TEXT("Decoration"), DecoId);
+}
+
+FWeaponTableRow* UCMSSubsystem::GetWeaponRow(FName WeaponId) const
+{
+	return GetRow<FWeaponTableRow>(TEXT("Weapon"), WeaponId);
+}
+
+FArmorTableRow* UCMSSubsystem::GetArmorRow(FName ArmorId) const
+{
+	return GetRow<FArmorTableRow>(TEXT("Armor"), ArmorId);
+}
+
+FSkillTableRow* UCMSSubsystem::GetSkillRow(FName SkillId) const
+{
+	return GetRow<FSkillTableRow>(TEXT("Skill"), SkillId);
+}
+
+FRecipeTableRow* UCMSSubsystem::GetRecipeRow(FName RecipeId) const
+{
+	return GetRow<FRecipeTableRow>(TEXT("Recipe"), RecipeId);
+}

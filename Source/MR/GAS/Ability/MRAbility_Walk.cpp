@@ -6,7 +6,6 @@
 
 UMRAbility_Walk::UMRAbility_Walk()
 {
-	// 어빌리티 태그 - 이 태그로 외부에서 Cancel 가능
 	FGameplayTagContainer Tags;
 	Tags.AddTag(MRGameplayTags::Ability_Walk);
 	SetAssetTags(Tags);

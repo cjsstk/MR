@@ -13,7 +13,7 @@ class UBlendSpace;
  * "Character.State.Moving" 태그를 관리하며, AnimBP가 이 태그로 이동/대기 상태를 전환한다.
  * 애니메이션 에셋 로딩은 AMRPlayerCharacter::LoadAndApplyWeaponAnims에서 담당한다.
  */
-UCLASS()
+UCLASS(Blueprintable)
 class MR_API UMRAbility_Walk : public UMRGameplayAbility
 {
 	GENERATED_BODY()

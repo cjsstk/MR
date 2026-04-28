@@ -46,6 +46,16 @@ public:
 	/** Monster Row를 Type으로 조회한다. 없으면 nullptr. */
 	FMonsterTableRow* GetMonsterRow(int32 Type) const;
 
+	/** Drop Table Row를 DropTableId(RowName)로 조회한다. 없으면 nullptr. */
+	FDropTableRow* GetDropTableRow(FName DropTableId) const;
+
+	FItemTableRow*       GetItemRow(FName ItemId) const;
+	FDecorationTableRow* GetDecorationRow(FName DecoId) const;
+	FWeaponTableRow*     GetWeaponRow(FName WeaponId) const;
+	FArmorTableRow*      GetArmorRow(FName ArmorId) const;
+	FSkillTableRow*      GetSkillRow(FName SkillId) const;
+	FRecipeTableRow*     GetRecipeRow(FName RecipeId) const;
+
 protected:
 	/**
 	 * 에디터에서 BP 서브클래스를 통해 설정하는 DataTable 목록.

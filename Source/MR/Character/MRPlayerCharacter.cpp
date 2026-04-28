@@ -1,8 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MRPlayerCharacter.h"
 #include "AbilitySystemComponent.h"
-#include "Animation/BlendSpace.h"
 #include "Camera/CameraComponent.h"
 #include "Component/MRCharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
@@ -11,9 +10,12 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "MRAbility_Walk.h"
 #include "MRAbility_Sprint.h"
-#include "MRPlayerAnimInstance.h"
-#include "GameResourceSubsystem.h"
-#include "Animation/BlendSpace.h"
+#include "MRAbility_Dodge.h"
+#include "MRAbility_Attack.h"
+#include "MRAbility_LockOn.h"
+#include "MRGameplayTags.h"
+#include "MRAttributeSetBase.h"
+#include "Action/Action.h"
 #include "Sugar.h"
 
 AMRPlayerCharacter::AMRPlayerCharacter(const FObjectInitializer& ObjectInitializer)
@@ -46,7 +48,7 @@ AMRPlayerCharacter::AMRPlayerCharacter(const FObjectInitializer& ObjectInitializ
 void AMRPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	LoadAndApplyWeaponAnims(CurrentWeaponType);
+	LinkWeaponAnimLayer(CurrentWeaponType);
 }
 
 void AMRPlayerCharacter::PossessedBy(AController* NewController)
@@ -56,10 +58,31 @@ void AMRPlayerCharacter::PossessedBy(AController* NewController)
 	// Walk/Sprint 어빌리티는 핸들 관리를 위해 별도 부여
 	if (AbilitySystemComponent)
 	{
-		WalkAbilityHandle = AbilitySystemComponent->GiveAbility(
-			FGameplayAbilitySpec(UMRAbility_Walk::StaticClass(), 1, INDEX_NONE, this));
-		SprintAbilityHandle = AbilitySystemComponent->GiveAbility(
-			FGameplayAbilitySpec(UMRAbility_Sprint::StaticClass(), 1, INDEX_NONE, this));
+		UClass* WalkClass   = WalkAbilityClass   ? WalkAbilityClass.Get()   : UMRAbility_Walk::StaticClass();
+		UClass* SprintClass = SprintAbilityClass ? SprintAbilityClass.Get() : UMRAbility_Sprint::StaticClass();
+		UClass* DodgeClass  = DodgeAbilityClass  ? DodgeAbilityClass.Get()  : UMRAbility_Dodge::StaticClass();
+		UClass* LockOnClass = LockOnAbilityClass ? LockOnAbilityClass.Get() : UMRAbility_LockOn::StaticClass();
+		WalkAbilityHandle   = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(WalkClass,   1, INDEX_NONE, this));
+		SprintAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(SprintClass, 1, INDEX_NONE, this));
+		DodgeAbilityHandle  = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(DodgeClass,  1, INDEX_NONE, this));
+		LockOnAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(LockOnClass, 1, INDEX_NONE, this));
+		SwapWeaponAbilities(CurrentWeaponType);
+
+		// 초기 체력/스태미나 값을 Store에 반영
+		if (const UMRAttributeSetBase* AttrSet = AbilitySystemComponent->GetSet<UMRAttributeSetBase>())
+		{
+			if (UActionDispatcher* Dispatcher = GetActionDispatcher(this))
+			{
+				Dispatcher->Dispatch(Actions::SetHealth(AttrSet->GetHealth(), AttrSet->GetMaxHealth()));
+				Dispatcher->Dispatch(Actions::SetStamina(AttrSet->GetStamina(), AttrSet->GetMaxStamina()));
+			}
+		}
+
+		// 이후 변경사항 구독
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			UMRAttributeSetBase::GetHealthAttribute()).AddUObject(this, &AMRPlayerCharacter::OnHealthChanged);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			UMRAttributeSetBase::GetStaminaAttribute()).AddUObject(this, &AMRPlayerCharacter::OnStaminaChanged);
 	}
 }
 
@@ -86,7 +109,10 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::OnMoveInputTriggered);
 			EIC->BindAction(MoveAction, ETriggerEvent::Completed, this, &AMRPlayerCharacter::OnMoveInputCompleted);
-			
+		}
+
+		if (LookAction)
+		{
 			EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::OnLook);
 		}
 
@@ -101,6 +127,32 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 			EIC->BindAction(SprintAction, ETriggerEvent::Started,    this, &AMRPlayerCharacter::OnSprintStarted);
 			EIC->BindAction(SprintAction, ETriggerEvent::Completed,  this, &AMRPlayerCharacter::OnSprintCompleted);
 		}
+
+		if (AttackAction)
+		{
+			EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &AMRPlayerCharacter::OnAttackInput);
+		}
+
+		if (HeavyAttackAction)
+		{
+			EIC->BindAction(HeavyAttackAction, ETriggerEvent::Started,   this, &AMRPlayerCharacter::OnHeavyAttackStarted);
+			EIC->BindAction(HeavyAttackAction, ETriggerEvent::Completed, this, &AMRPlayerCharacter::OnHeavyAttackCompleted);
+		}
+
+		if (SpecialAction)
+		{
+			EIC->BindAction(SpecialAction, ETriggerEvent::Started, this, &AMRPlayerCharacter::OnSpecialInput);
+		}
+
+		if (DodgeAction)
+		{
+			EIC->BindAction(DodgeAction, ETriggerEvent::Started, this, &AMRPlayerCharacter::OnDodgeInput);
+		}
+
+		if (LockOnAction)
+		{
+			EIC->BindAction(LockOnAction, ETriggerEvent::Started, this, &AMRPlayerCharacter::OnLockOnInput);
+		}
 	}
 }
 
@@ -112,48 +164,18 @@ void AMRPlayerCharacter::SetWeaponType(EMRWeaponType NewWeaponType)
 	}
 
 	CurrentWeaponType = NewWeaponType;
-	LoadAndApplyWeaponAnims(NewWeaponType);
-}
+	LinkWeaponAnimLayer(NewWeaponType);
+	SwapWeaponAbilities(NewWeaponType);
 
-void AMRPlayerCharacter::LoadAndApplyWeaponAnims(EMRWeaponType WeaponType)
-{
-	UMRGameResource* GameRes = GetGameResource(this);
-	if (!GameRes)
+	// 활로 전환하면 록온 어빌리티 강제 종료 (활은 Aim 어빌리티가 록온 역할 담당)
+	if (NewWeaponType == EMRWeaponType::Bow && AbilitySystemComponent)
 	{
-		return;
+		FGameplayAbilitySpec* LockOnSpec = AbilitySystemComponent->FindAbilitySpecFromHandle(LockOnAbilityHandle);
+		if (LockOnSpec && LockOnSpec->IsActive())
+		{
+			AbilitySystemComponent->CancelAbility(LockOnSpec->Ability);
+		}
 	}
-
-	TWeakObjectPtr<AMRPlayerCharacter> WeakThis(this);
-
-	// Idle과 LocomotionBS를 각각 비동기 로드하여 AnimInstance에 바로 반영
-	GameRes->AsyncLoadWeaponIdleAnim(WeaponType, [WeakThis](UAnimSequence* Idle)
-	{
-		if (!WeakThis.IsValid()) return;
-		if (UMRPlayerAnimInstance* Anim = Cast<UMRPlayerAnimInstance>(WeakThis->GetMesh()->GetAnimInstance()))
-		{
-			Anim->IdleAnimation = Idle;
-		}
-	});
-
-	GameRes->AsyncLoadWeaponLocomotionBS(WeaponType, [WeakThis](UBlendSpace* BS)
-	{
-		if (!WeakThis.IsValid()) return;
-		if (UMRPlayerAnimInstance* Anim = Cast<UMRPlayerAnimInstance>(WeakThis->GetMesh()->GetAnimInstance()))
-		{
-			Anim->LocomotionBlendSpace = BS;
-		}
-	});
-
-	GameRes->AsyncLoadWeaponJumpAnims(WeaponType, [WeakThis](FWeaponJumpAnims Anims)
-	{
-		if (!WeakThis.IsValid()) return;
-		if (UMRPlayerAnimInstance* Anim = Cast<UMRPlayerAnimInstance>(WeakThis->GetMesh()->GetAnimInstance()))
-		{
-			Anim->JumpStartAnimation = Anims.Start;
-			Anim->JumpLoopAnimation  = Anims.Loop;
-			Anim->JumpEndAnimation   = Anims.End;
-		}
-	});
 }
 
 void AMRPlayerCharacter::OnMoveInputTriggered(const FInputActionValue& Value)
@@ -215,6 +237,12 @@ void AMRPlayerCharacter::OnSprintCompleted(const FInputActionValue& Value)
 
 void AMRPlayerCharacter::OnLook(const FInputActionValue& Value)
 {
+	// 록온 중에는 카메라가 태스크에 의해 자동 제어되므로 마우스 Look 입력 차단
+	if (AbilitySystemComponent && AbilitySystemComponent->HasMatchingGameplayTag(MRGameplayTags::Character_State_LockOn))
+	{
+		return;
+	}
+
 	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -222,5 +250,233 @@ void AMRPlayerCharacter::OnLook(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void AMRPlayerCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
+{
+	if (UActionDispatcher* Dispatcher = GetActionDispatcher(this))
+	{
+		const float MaxHealth = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetMaxHealthAttribute());
+		Dispatcher->Dispatch(Actions::SetHealth(Data.NewValue, MaxHealth));
+	}
+}
+
+void AMRPlayerCharacter::OnStaminaChanged(const FOnAttributeChangeData& Data)
+{
+	if (UActionDispatcher* Dispatcher = GetActionDispatcher(this))
+	{
+		const float MaxStamina = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetMaxStaminaAttribute());
+		Dispatcher->Dispatch(Actions::SetStamina(Data.NewValue, MaxStamina));
+	}
+}
+
+void AMRPlayerCharacter::OnAttackInput(const FInputActionValue& Value)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	// 활성 중인 공격 어빌리티가 있으면 태그 상태와 무관하게 콤보 버퍼링
+	// (방패 공격 시작 후 ShieldMode 태그가 제거되어도 콤보가 유지되어야 함)
+	auto TryBuffer = [](UAbilitySystemComponent* ASC, FGameplayAbilitySpecHandle Handle) -> bool
+	{
+		FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromHandle(Handle);
+		if (Spec && Spec->IsActive())
+		{
+			if (UMRAbility_Attack* Attack = Cast<UMRAbility_Attack>(Spec->GetPrimaryInstance()))
+			{
+				Attack->BufferComboInput();
+			}
+			return true;
+		}
+		return false;
+	};
+
+	if (TryBuffer(AbilitySystemComponent, ShieldLightAbilityHandle)) return;
+	if (TryBuffer(AbilitySystemComponent, AttackAbilityHandle)) return;
+
+	// 새로 시작
+	if (CurrentWeaponType == EMRWeaponType::Bow)
+	{
+		// 활: 조준 중일 때만 발사
+		const bool bAiming = AbilitySystemComponent->HasMatchingGameplayTag(MRGameplayTags::Character_State_Aiming);
+		if (!bAiming)
+		{
+			return;
+		}
+		AbilitySystemComponent->TryActivateAbility(AttackAbilityHandle);
+	}
+	else
+	{
+		// 한손검/양손검 등: 방패 모드면 방패 약공격, 아니면 일반 약공격
+		const bool bShieldMode = AbilitySystemComponent->HasMatchingGameplayTag(MRGameplayTags::Character_State_ShieldMode);
+		AbilitySystemComponent->TryActivateAbility(bShieldMode ? ShieldLightAbilityHandle : AttackAbilityHandle);
+	}
+}
+
+void AMRPlayerCharacter::OnHeavyAttackStarted(const FInputActionValue& Value)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	auto TryBuffer = [](UAbilitySystemComponent* ASC, FGameplayAbilitySpecHandle Handle) -> bool
+	{
+		FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromHandle(Handle);
+		if (Spec && Spec->IsActive())
+		{
+			if (UMRAbility_Attack* Attack = Cast<UMRAbility_Attack>(Spec->GetPrimaryInstance()))
+			{
+				Attack->BufferComboInput();
+			}
+			return true;
+		}
+		return false;
+	};
+
+	if (CurrentWeaponType == EMRWeaponType::Bow)
+	{
+		// 활: TryBuffer/ShieldMode 분기 없이 바로 조준 어빌리티 활성화
+		AbilitySystemComponent->TryActivateAbility(HeavyAttackAbilityHandle);
+		return;
+	}
+
+	if (TryBuffer(AbilitySystemComponent, ShieldHeavyAbilityHandle)) return;
+	if (TryBuffer(AbilitySystemComponent, HeavyAttackAbilityHandle)) return;
+
+	// 새로 시작 — 방패 모드면 방패 강공격, 아니면 일반 강공격
+	const bool bShieldMode = AbilitySystemComponent->HasMatchingGameplayTag(MRGameplayTags::Character_State_ShieldMode);
+	AbilitySystemComponent->TryActivateAbility(bShieldMode ? ShieldHeavyAbilityHandle : HeavyAttackAbilityHandle);
+}
+
+void AMRPlayerCharacter::OnHeavyAttackCompleted(const FInputActionValue& Value)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	// 활만 RMB 홀드 방식 — 다른 무기는 Completed 이벤트 무시
+	if (CurrentWeaponType != EMRWeaponType::Bow)
+	{
+		return;
+	}
+
+	// 조준 어빌리티 취소
+	FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromHandle(HeavyAttackAbilityHandle);
+	if (Spec && Spec->IsActive())
+	{
+		AbilitySystemComponent->CancelAbility(Spec->Ability);
+	}
+}
+
+void AMRPlayerCharacter::OnSpecialInput(const FInputActionValue& Value)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromHandle(SpecialAbilityHandle);
+	if (!Spec)
+	{
+		return;
+	}
+
+	if (Spec->IsActive())
+	{
+		// 이미 활성 중(방패 모드 등)이면 취소하여 토글 오프
+		AbilitySystemComponent->CancelAbility(Spec->Ability);
+	}
+	else
+	{
+		AbilitySystemComponent->TryActivateAbility(SpecialAbilityHandle);
+	}
+}
+
+void AMRPlayerCharacter::SwapWeaponAbilities(EMRWeaponType WeaponType)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	auto ClearHandle = [this](FGameplayAbilitySpecHandle& Handle)
+	{
+		if (Handle.IsValid())
+		{
+			AbilitySystemComponent->ClearAbility(Handle);
+			Handle = FGameplayAbilitySpecHandle();
+		}
+	};
+
+	auto GiveAbility = [this](FGameplayAbilitySpecHandle& Handle, UClass* AbilityClass)
+	{
+		if (AbilityClass)
+		{
+			Handle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, INDEX_NONE, this));
+		}
+	};
+
+	ClearHandle(AttackAbilityHandle);
+	ClearHandle(HeavyAttackAbilityHandle);
+	ClearHandle(ShieldLightAbilityHandle);
+	ClearHandle(ShieldHeavyAbilityHandle);
+	ClearHandle(SpecialAbilityHandle);
+
+	const FMRWeaponAbilityConfig* Config = WeaponConfigs.Find(WeaponType);
+	if (!Config)
+	{
+		return;
+	}
+
+	GiveAbility(AttackAbilityHandle,      Config->LightAttackClass.Get());
+	GiveAbility(HeavyAttackAbilityHandle, Config->HeavyAttackClass.Get());
+	GiveAbility(ShieldLightAbilityHandle, Config->ShieldLightClass.Get());
+	GiveAbility(ShieldHeavyAbilityHandle, Config->ShieldHeavyClass.Get());
+	GiveAbility(SpecialAbilityHandle,     Config->SpecialClass.Get());
+}
+
+void AMRPlayerCharacter::OnDodgeInput(const FInputActionValue& Value)
+{
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->TryActivateAbility(DodgeAbilityHandle);
+	}
+}
+
+void AMRPlayerCharacter::OnLockOnInput(const FInputActionValue& Value)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromHandle(LockOnAbilityHandle);
+	if (!Spec)
+	{
+		return;
+	}
+
+	// 이미 록온 중이면 취소(토글 오프), 아니면 활성화(토글 온)
+	if (Spec->IsActive())
+	{
+		AbilitySystemComponent->CancelAbility(Spec->Ability);
+	}
+	else
+	{
+		AbilitySystemComponent->TryActivateAbility(LockOnAbilityHandle);
+	}
+}
+
+void AMRPlayerCharacter::LinkWeaponAnimLayer(EMRWeaponType WeaponType)
+{
+	const FMRWeaponAbilityConfig* Config = WeaponConfigs.Find(WeaponType);
+	if (Config && Config->AnimLayerClass)
+	{
+		GetMesh()->LinkAnimClassLayers(Config->AnimLayerClass);
 	}
 }
