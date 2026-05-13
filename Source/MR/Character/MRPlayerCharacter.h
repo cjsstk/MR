@@ -80,8 +80,16 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	/** 타겟팅(록온/조준) 중 카메라 오프셋. 양수 Y = 카메라 오른쪽 이동 → 캐릭터 화면 왼쪽 배치. */
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Targeting")
+	FVector TargetingCameraOffset = FVector(0.f, 80.f, 0.f);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera|Targeting")
+	float CameraOffsetInterpSpeed = 8.f;
 
 	// ─── 입력 에셋 (Blueprint에서 설정) ────────────────────────────────────
 
@@ -158,6 +166,8 @@ private:
 	/** ASC 어트리뷰트 변경 → Store 동기화 */
 	void OnHealthChanged(const FOnAttributeChangeData& Data);
 	void OnStaminaChanged(const FOnAttributeChangeData& Data);
+
+	FVector DefaultCameraOffset = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
 	EMRWeaponType CurrentWeaponType = EMRWeaponType::OneHandedSword;

@@ -53,7 +53,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "LockOn")
 	float CameraInterpSpeed = 10.f;
 
+	/** 타겟 루트 위치에서 위로 더할 Z 오프셋. 클수록 카메라가 위를 보며 시야가 넓어짐. */
+	UPROPERTY(EditDefaultsOnly, Category = "LockOn")
+	float LockOnTargetHeightOffset = 80.f;
+
+	/** 록온 중 이동 속도. 해제 시 원래 속도로 복원. */
+	UPROPERTY(EditDefaultsOnly, Category = "LockOn")
+	float LockOnMoveSpeed = 300.f;
+
 private:
+	float OriginalMaxWalkSpeed = 0.f;
 	/** 카메라 정면 방향과 거리 기반 가중 스코어로 최적 몬스터 탐색 */
 	AActor* FindBestTarget() const;
 

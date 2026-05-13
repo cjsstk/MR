@@ -23,16 +23,18 @@ class MR_API UMRAbilityTask_LockOnTick : public UAbilityTask
 public:
 	/**
 	 * 팩토리 함수.
-	 * @param InTarget         추적할 대상 액터 (보통 AMRMonster)
-	 * @param InMaxDistance    이 거리를 초과하면 록온 해제
-	 * @param InCameraInterpSpeed  카메라 회전 보간 속도 (RInterpTo)
+	 * @param InTarget              추적할 대상 액터 (보통 AMRMonster)
+	 * @param InMaxDistance         이 거리를 초과하면 록온 해제
+	 * @param InCameraInterpSpeed   카메라 회전 보간 속도 (RInterpTo)
+	 * @param InTargetHeightOffset  타겟 루트에서 위로 더할 Z 오프셋 (카메라 시야 높이 조정)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Ability|Tasks", meta = (HidePin = "OwningAbility", DefaultToSelf = "OwningAbility", BlueprintInternalUseOnly = "true"))
 	static UMRAbilityTask_LockOnTick* CreateTask(
 		UGameplayAbility* OwningAbility,
 		AActor* InTarget,
 		float InMaxDistance,
-		float InCameraInterpSpeed);
+		float InCameraInterpSpeed,
+		float InTargetHeightOffset = 80.f);
 
 	/** 대상이 유효하지 않아진 경우 브로드캐스트 */
 	UPROPERTY(BlueprintAssignable)
@@ -53,4 +55,5 @@ private:
 	TWeakObjectPtr<AActor> LockedTarget;
 	float MaxDistance = 2000.f;
 	float CameraInterpSpeed = 10.f;
+	float TargetHeightOffset = 80.f;
 };

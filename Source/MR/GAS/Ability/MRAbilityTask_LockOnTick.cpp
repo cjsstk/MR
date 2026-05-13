@@ -10,13 +10,15 @@ UMRAbilityTask_LockOnTick* UMRAbilityTask_LockOnTick::CreateTask(
 	UGameplayAbility* OwningAbility,
 	AActor* InTarget,
 	float InMaxDistance,
-	float InCameraInterpSpeed)
+	float InCameraInterpSpeed,
+	float InTargetHeightOffset)
 {
 	UMRAbilityTask_LockOnTick* Task = NewAbilityTask<UMRAbilityTask_LockOnTick>(OwningAbility);
-	Task->bTickingTask      = true;
-	Task->LockedTarget      = InTarget;
-	Task->MaxDistance       = InMaxDistance;
-	Task->CameraInterpSpeed = InCameraInterpSpeed;
+	Task->bTickingTask        = true;
+	Task->LockedTarget        = InTarget;
+	Task->MaxDistance         = InMaxDistance;
+	Task->CameraInterpSpeed   = InCameraInterpSpeed;
+	Task->TargetHeightOffset  = InTargetHeightOffset;
 	return Task;
 }
 
@@ -62,8 +64,9 @@ void UMRAbilityTask_LockOnTick::TickTask(float DeltaTime)
 		return;
 	}
 
-	// 카메라 위치에서 타겟 방향 벡터 계산
-	const FVector ToTarget = LockedTarget->GetActorLocation() - Camera->GetComponentLocation();
+	// 카메라 위치에서 타겟 방향 벡터 계산 (높이 오프셋 적용으로 시야 확보)
+	const FVector LookAtPoint = LockedTarget->GetActorLocation() + FVector(0.f, 0.f, TargetHeightOffset);
+	const FVector ToTarget = LookAtPoint - Camera->GetComponentLocation();
 	FRotator TargetRot = ToTarget.Rotation();
 
 	// 카메라 피치를 너무 올리거나 내리지 않도록 클램프, Roll은 항상 0

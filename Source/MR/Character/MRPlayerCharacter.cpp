@@ -48,7 +48,24 @@ AMRPlayerCharacter::AMRPlayerCharacter(const FObjectInitializer& ObjectInitializ
 void AMRPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	DefaultCameraOffset = CameraBoom->SocketOffset;
 	LinkWeaponAnimLayer(CurrentWeaponType);
+}
+
+void AMRPlayerCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!AbilitySystemComponent || !CameraBoom)
+	{
+		return;
+	}
+
+	const bool bIsTargeting = AbilitySystemComponent->HasMatchingGameplayTag(MRGameplayTags::Character_State_LockOn)
+	                       || AbilitySystemComponent->HasMatchingGameplayTag(MRGameplayTags::Character_State_Aiming);
+
+	const FVector TargetOffset = bIsTargeting ? TargetingCameraOffset : DefaultCameraOffset;
+	CameraBoom->SocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetOffset, DeltaSeconds, CameraOffsetInterpSpeed);
 }
 
 void AMRPlayerCharacter::PossessedBy(AController* NewController)

@@ -13,8 +13,9 @@ UMRAbility_Sprint::UMRAbility_Sprint()
 	Tags.AddTag(MRGameplayTags::Ability_Sprint);
 	SetAssetTags(Tags);
 
-	// 공격 중에는 스프린트 활성화 불가
+	// 공격 중, 록온 중에는 스프린트 활성화 불가
 	ActivationBlockedTags.AddTag(MRGameplayTags::Character_State_Attacking);
+	ActivationBlockedTags.AddTag(MRGameplayTags::Character_State_LockOn);
 }
 
 void UMRAbility_Sprint::ActivateAbility(

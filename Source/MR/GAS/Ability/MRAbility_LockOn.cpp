@@ -68,11 +68,14 @@ void UMRAbility_LockOn::ActivateAbility(
 	}
 
 	// 록온 중에는 캐릭터가 카메라 방향을 바라보도록 회전 설정 변경
+	UCharacterMovementComponent* MovComp = Player->GetCharacterMovement();
+	OriginalMaxWalkSpeed = MovComp->MaxWalkSpeed;
+	MovComp->MaxWalkSpeed = LockOnMoveSpeed;
 	Player->bUseControllerRotationYaw = true;
-	Player->GetCharacterMovement()->bOrientRotationToMovement = false;
+	MovComp->bOrientRotationToMovement = false;
 
 	// 매 틱 카메라 보간 태스크 시작
-	LockOnTask = UMRAbilityTask_LockOnTick::CreateTask(this, Target, MaxLockOnDistance, CameraInterpSpeed);
+	LockOnTask = UMRAbilityTask_LockOnTick::CreateTask(this, Target, MaxLockOnDistance, CameraInterpSpeed, LockOnTargetHeightOffset);
 	LockOnTask->OnTargetLost.AddDynamic(this, &UMRAbility_LockOn::OnTargetLost);
 	LockOnTask->ReadyForActivation();
 
@@ -92,11 +95,13 @@ void UMRAbility_LockOn::EndAbility(
 		ASC->RemoveLooseGameplayTag(MRGameplayTags::Character_State_LockOn);
 	}
 
-	// 회전 설정 복원
+	// 회전 설정 및 이동속도 복원
 	if (AMRPlayerCharacter* Player = GetPlayerCharacter())
 	{
 		Player->bUseControllerRotationYaw = false;
-		Player->GetCharacterMovement()->bOrientRotationToMovement = true;
+		UCharacterMovementComponent* MovComp = Player->GetCharacterMovement();
+		MovComp->bOrientRotationToMovement = true;
+		MovComp->MaxWalkSpeed = OriginalMaxWalkSpeed;
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
