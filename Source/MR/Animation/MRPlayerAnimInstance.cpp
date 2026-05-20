@@ -59,5 +59,5 @@ void UMRPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 
 	//UE_LOG(LogTemp, Warning, TEXT("VelocityForward = %.1f, VelocityRight = %.1f"), VelocityForward, VelocityRight);
-	UE_LOG(LogTemp, Warning, TEXT("AimPitch = %.1f, AimYaw = %.1f"), AimPitch, AimYaw);
+	//UE_LOG(LogTemp, Warning, TEXT("AimPitch = %.1f, AimYaw = %.1f"), AimPitch, AimYaw);
 }

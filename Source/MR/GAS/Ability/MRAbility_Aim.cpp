@@ -42,11 +42,14 @@ void UMRAbility_Aim::ActivateAbility(
 		ASC->AddLooseGameplayTag(MRGameplayTags::Character_State_Aiming);
 	}
 
-	// 조준 중에는 캐릭터가 카메라 방향을 바라보도록 회전 설정 변경
+	// 조준 중에는 캐릭터가 카메라 방향을 바라보도록 회전 설정 변경, 이동 속도 감소
 	if (AMRPlayerCharacter* Player = GetPlayerCharacter())
 	{
 		Player->bUseControllerRotationYaw = true;
-		Player->GetCharacterMovement()->bOrientRotationToMovement = false;
+		UCharacterMovementComponent* MovComp = Player->GetCharacterMovement();
+		MovComp->bOrientRotationToMovement = false;
+		OriginalMaxWalkSpeed = MovComp->MaxWalkSpeed;
+		MovComp->MaxWalkSpeed = AimMoveSpeed;
 	}
 
 	// RMB 해제(OnHeavyAttackCompleted)까지 어빌리티를 유지한다.
@@ -65,11 +68,16 @@ void UMRAbility_Aim::EndAbility(
 		ASC->RemoveLooseGameplayTag(MRGameplayTags::Character_State_Aiming);
 	}
 
-	// 회전 설정 복원
+	// 회전 설정 및 이동 속도 복원
 	if (AMRPlayerCharacter* Player = GetPlayerCharacter())
 	{
 		Player->bUseControllerRotationYaw = false;
-		Player->GetCharacterMovement()->bOrientRotationToMovement = true;
+		UCharacterMovementComponent* MovComp = Player->GetCharacterMovement();
+		MovComp->bOrientRotationToMovement = true;
+		if (OriginalMaxWalkSpeed > 0.f)
+		{
+			MovComp->MaxWalkSpeed = OriginalMaxWalkSpeed;
+		}
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

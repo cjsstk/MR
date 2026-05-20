@@ -14,7 +14,8 @@ namespace MRGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Dead,       "Character.State.Dead",        "캐릭터가 사망한 상태")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_ShieldMode, "Character.State.ShieldMode",  "한손검 방패 모드 — 방패를 든 자세로 이동 가능, 공격/피격 시 해제")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Aiming,     "Character.State.Aiming",      "활 조준 모드 — 카메라 정면 방향으로 조준 자세, 홀드 중 유지")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_LockOn,     "Character.State.LockOn",      "근접무기 록온 모드 — 특정 몬스터를 카메라가 지속 추적")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_LockOn,      "Character.State.LockOn",      "근접무기 록온 모드 — 특정 몬스터를 카메라가 지속 추적")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Traveling,   "Character.State.Traveling",   "레벨 이동 중 — 입력 및 어빌리티 차단")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Attack_Hit, "Event.Attack.Hit", "히트 판정 시스템이 충돌을 감지했을 때 발행하는 이벤트")
 

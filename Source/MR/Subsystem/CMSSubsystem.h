@@ -10,8 +10,7 @@
 
 /**
  * 게임 데이터(DataTable)를 이름 기반으로 관리하고 Row 조회 API를 제공하는 서브시스템.
- * BP 서브클래스를 만들어 TablePaths에 DataTable 에셋을 등록하면 Initialize 시점에 자동 로드된다.
- * 코드에서 직접 등록할 때는 RegisterTable()을 사용한다.
+ * UMRCMSSettings(Project Settings > MR > CMS)에 등록된 DataTable을 Initialize 시점에 자동 로드한다.
  */
 UCLASS()
 class MR_API UCMSSubsystem : public UGameInstanceSubsystem
@@ -55,14 +54,7 @@ public:
 	FArmorTableRow*      GetArmorRow(FName ArmorId) const;
 	FSkillTableRow*      GetSkillRow(FName SkillId) const;
 	FRecipeTableRow*     GetRecipeRow(FName RecipeId) const;
-
-protected:
-	/**
-	 * 에디터에서 BP 서브클래스를 통해 설정하는 DataTable 목록.
-	 * Key: 조회에 쓸 이름 (e.g. "Monster"), Value: DataTable 에셋 경로 (Soft Reference)
-	 */
-	UPROPERTY(EditDefaultsOnly, Category = "CMS")
-	TMap<FName, TSoftObjectPtr<UDataTable>> TablePaths;
+	FFieldTableRow*      GetFieldRow(FName FieldId) const;
 
 private:
 	/** Initialize 시 TablePaths를 동기 로드해서 캐싱한다. */

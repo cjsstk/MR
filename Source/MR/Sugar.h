@@ -9,6 +9,7 @@ class UMRGameResource;
 class UHUDStore;
 class UCharacterStore;
 class UActionDispatcher;
+class UMRTravelSubsystem;
 
 UCMSSubsystem* GetCMS(const UObject* InObject);
 UMRGameResource* GetGameResource(const UObject* InObject);
@@ -21,3 +22,6 @@ UCharacterStore* GetCharacterStore(const UObject* InObject);
 
 /** ActionDispatcher를 반환한다. 액션 디스패치 시 사용. */
 UActionDispatcher* GetActionDispatcher(const UObject* InObject);
+
+/** TravelSubsystem을 반환한다. 레벨 이동 요청 시 사용. */
+UMRTravelSubsystem* GetTravelSubsystem(const UObject* InObject);

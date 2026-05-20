@@ -195,6 +195,35 @@ void AMRPlayerCharacter::SetWeaponType(EMRWeaponType NewWeaponType)
 	}
 }
 
+FMRPlayerPersistData AMRPlayerCharacter::ExtractPersistData() const
+{
+	FMRPlayerPersistData Data;
+	Data.WeaponType = CurrentWeaponType;
+
+	if (AbilitySystemComponent)
+	{
+		Data.Health    = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetHealthAttribute());
+		Data.MaxHealth = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetMaxHealthAttribute());
+		Data.Stamina    = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetStaminaAttribute());
+		Data.MaxStamina = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetMaxStaminaAttribute());
+	}
+
+	return Data;
+}
+
+void AMRPlayerCharacter::ApplyPersistData(const FMRPlayerPersistData& Data)
+{
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->SetNumericAttributeBase(UMRAttributeSetBase::GetHealthAttribute(),    Data.Health);
+		AbilitySystemComponent->SetNumericAttributeBase(UMRAttributeSetBase::GetMaxHealthAttribute(), Data.MaxHealth);
+		AbilitySystemComponent->SetNumericAttributeBase(UMRAttributeSetBase::GetStaminaAttribute(),    Data.Stamina);
+		AbilitySystemComponent->SetNumericAttributeBase(UMRAttributeSetBase::GetMaxStaminaAttribute(), Data.MaxStamina);
+	}
+
+	SetWeaponType(Data.WeaponType);
+}
+
 void AMRPlayerCharacter::OnMoveInputTriggered(const FInputActionValue& Value)
 {
 	const FVector2D InputVec = Value.Get<FVector2D>();
@@ -312,18 +341,17 @@ void AMRPlayerCharacter::OnAttackInput(const FInputActionValue& Value)
 	};
 
 	if (TryBuffer(AbilitySystemComponent, ShieldLightAbilityHandle)) return;
+	if (TryBuffer(AbilitySystemComponent, AimedAttackAbilityHandle)) return;
 	if (TryBuffer(AbilitySystemComponent, AttackAbilityHandle)) return;
 
 	// 새로 시작
 	if (CurrentWeaponType == EMRWeaponType::Bow)
 	{
-		// 활: 조준 중일 때만 발사
 		const bool bAiming = AbilitySystemComponent->HasMatchingGameplayTag(MRGameplayTags::Character_State_Aiming);
-		if (!bAiming)
-		{
-			return;
-		}
-		AbilitySystemComponent->TryActivateAbility(AttackAbilityHandle);
+		const FGameplayAbilitySpecHandle& BowAttackHandle = (bAiming && AimedAttackAbilityHandle.IsValid())
+			? AimedAttackAbilityHandle
+			: AttackAbilityHandle;
+		AbilitySystemComponent->TryActivateAbility(BowAttackHandle);
 	}
 	else
 	{
@@ -439,6 +467,7 @@ void AMRPlayerCharacter::SwapWeaponAbilities(EMRWeaponType WeaponType)
 	};
 
 	ClearHandle(AttackAbilityHandle);
+	ClearHandle(AimedAttackAbilityHandle);
 	ClearHandle(HeavyAttackAbilityHandle);
 	ClearHandle(ShieldLightAbilityHandle);
 	ClearHandle(ShieldHeavyAbilityHandle);
@@ -451,6 +480,7 @@ void AMRPlayerCharacter::SwapWeaponAbilities(EMRWeaponType WeaponType)
 	}
 
 	GiveAbility(AttackAbilityHandle,      Config->LightAttackClass.Get());
+	GiveAbility(AimedAttackAbilityHandle, Config->AimedAttackClass.Get());
 	GiveAbility(HeavyAttackAbilityHandle, Config->HeavyAttackClass.Get());
 	GiveAbility(ShieldLightAbilityHandle, Config->ShieldLightClass.Get());
 	GiveAbility(ShieldHeavyAbilityHandle, Config->ShieldHeavyClass.Get());

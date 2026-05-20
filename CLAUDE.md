@@ -40,6 +40,9 @@ Source/
 
 - 새 폴더 추가 시 `MR.Build.cs`의 `PrivateIncludePaths`에 반드시 추가
 
+## 엔진 폴더 위치
+E:/UE_5.5
+
 ## 클래스 계층
 
 ### 캐릭터

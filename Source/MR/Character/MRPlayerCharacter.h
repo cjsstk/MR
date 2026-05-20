@@ -7,6 +7,7 @@
 #include "MREnum.h"
 #include "InputActionValue.h"
 #include "AbilitySystemComponent.h"
+#include "Travel/MRTravelTypes.h"
 #include "MRPlayerCharacter.generated.h"
 
 class USpringArmComponent;
@@ -37,6 +38,10 @@ struct FMRWeaponAbilityConfig
 	/** 방패 모드 강공격 (한손검 전용, 없으면 무시) */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UMRAbility_Attack> ShieldHeavyClass;
+
+	/** 조준 중 공격 (활 전용). 미설정 시 LightAttackClass 사용. */
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UMRAbility_Attack> AimedAttackClass;
 
 	/** 특수 액션: 한손검=ShieldMode 토글, 활=근접 공격 */
 	UPROPERTY(EditDefaultsOnly)
@@ -77,6 +82,12 @@ public:
 	/** 무기 타입 변경. 이동 중이면 즉시 새 BlendSpace 로드를 트리거한다. */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SetWeaponType(EMRWeaponType NewWeaponType);
+
+	/** 현재 상태를 FMRPlayerPersistData로 추출한다. TravelSubsystem에서 저장용으로 호출. */
+	FMRPlayerPersistData ExtractPersistData() const;
+
+	/** FMRPlayerPersistData를 적용해 레벨 이동 후 상태를 복원한다. */
+	void ApplyPersistData(const FMRPlayerPersistData& Data);
 
 protected:
 	virtual void BeginPlay() override;
@@ -195,6 +206,9 @@ private:
 
 	/** 현재 무기 타입에 해당하는 AttackAbility 스펙 핸들 */
 	FGameplayAbilitySpecHandle AttackAbilityHandle;
+
+	/** 활 조준 공격 스펙 핸들 (활 전용) */
+	FGameplayAbilitySpecHandle AimedAttackAbilityHandle;
 
 	/** 현재 무기 타입에 해당하는 HeavyAttackAbility 스펙 핸들 */
 	FGameplayAbilitySpecHandle HeavyAttackAbilityHandle;

@@ -24,6 +24,10 @@ class MR_API UMRAbility_Aim : public UMRGameplayAbility
 public:
 	UMRAbility_Aim();
 
+	/** 조준 중 이동 속도. BP에서 조정 가능. */
+	UPROPERTY(EditDefaultsOnly, Category = "Aim")
+	float AimMoveSpeed = 200.f;
+
 protected:
 	virtual void ActivateAbility(
 		const FGameplayAbilitySpecHandle Handle,
@@ -37,4 +41,7 @@ protected:
 		const FGameplayAbilityActivationInfo ActivationInfo,
 		bool bReplicateEndAbility,
 		bool bWasCancelled) override;
+
+private:
+	float OriginalMaxWalkSpeed = 0.f;
 };

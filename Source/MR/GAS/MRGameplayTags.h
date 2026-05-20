@@ -24,6 +24,7 @@ namespace MRGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_ShieldMode)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Aiming)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_LockOn)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Traveling)
 
 	// ─── 게임플레이 이벤트 ───────────────────────────────────────────────────
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Attack_Hit)

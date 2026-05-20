@@ -10,7 +10,9 @@ public class MR : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "MRStore", "UMG", "GameplayAbilities", "GameplayTags", "GameplayTasks" });
 
-        PrivateIncludePaths.AddRange(new string[] { "MR", "MR/Subsystem", "MR/Widget", "MR/Store", "MR/Action", "MR/Character", "MR/Component", "MR/Animation", "MR/GAS", "MR/GAS/Attribute", "MR/GAS/Ability", "MR/GAS/Effect" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "DeveloperSettings" });
+
+        PrivateIncludePaths.AddRange(new string[] { "MR", "MR/Subsystem", "MR/Widget", "MR/Store", "MR/Action", "MR/Character", "MR/Component", "MR/Animation", "MR/GAS", "MR/GAS/Attribute", "MR/GAS/Ability", "MR/GAS/Effect", "MR/Travel", "MR/Settings" });
 
     }
 }

@@ -2,13 +2,14 @@
 
 
 #include "Subsystem/CMSSubsystem.h"
+#include "Settings/MRCMSSettings.h"
 
 void UCMSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	// TablePaths에 등록된 DataTable을 동기 로드하여 캐시
-	for (auto& [Name, SoftTable] : TablePaths)
+	// UMRCMSSettings(Project Settings)에 등록된 DataTable을 동기 로드하여 캐시
+	for (auto& [Name, SoftTable] : UMRCMSSettings::Get()->TablePaths)
 	{
 		if (SoftTable.IsNull())
 		{
@@ -79,4 +80,9 @@ FSkillTableRow* UCMSSubsystem::GetSkillRow(FName SkillId) const
 FRecipeTableRow* UCMSSubsystem::GetRecipeRow(FName RecipeId) const
 {
 	return GetRow<FRecipeTableRow>(TEXT("Recipe"), RecipeId);
+}
+
+FFieldTableRow* UCMSSubsystem::GetFieldRow(FName FieldId) const
+{
+	return GetRow<FFieldTableRow>(TEXT("Field"), FieldId);
 }

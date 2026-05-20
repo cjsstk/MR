@@ -318,6 +318,26 @@ struct MR_API FMonsterTableRow : public FTableRowBase
 	FName CaptureDropTableId;
 };
 
+// ─── 필드 ──────────────────────────────────────────────────────────────────
+
+/** 사냥터(Field) 정보. RowName = 필드 ID (e.g. "AncientForest") */
+USTRUCT(BlueprintType)
+struct MR_API FFieldTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Field")
+	FText DisplayName;
+
+	/** UGameplayStatics::OpenLevel에 전달할 맵 이름. e.g. "Field_AncientForest" */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Field")
+	FString MapName;
+
+	/** 이 필드에 출현하는 몬스터 Type 목록 (FMonsterTableRow::Type 참조). Phase 2에서 스폰에 사용. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Field")
+	TArray<int32> MonsterTypes;
+};
+
 /**
  * 프로젝트 전용 DataTable 베이스 클래스.
  * 테이블별 Row 구조체는 이 파일에 FTableRowBase 서브구조체로 정의한다.
