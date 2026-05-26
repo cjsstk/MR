@@ -27,7 +27,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster")
 	int32 MonsterLevel = 1;
 
+	/** 사망 후 액터가 Destroy()되기까지의 대기 시간 (사망 애니메이션 재생 시간에 맞춰 조정) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Monster", meta = (ClampMin = "0.0"))
+	float DeathDestroyDelay = 3.f;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void HandleDeath() override;
+
+private:
+	/** DataTable에서 MonsterType/MonsterLevel에 맞는 스탯을 조회해 GE로 적용한다. */
+	void InitializeMonsterStats();
+
+	void DestroyAfterDeath();
 };

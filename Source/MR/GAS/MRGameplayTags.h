@@ -26,6 +26,9 @@ namespace MRGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_LockOn)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Traveling)
 
+	// 비행 상태
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Flying)
+
 	// ─── 게임플레이 이벤트 ───────────────────────────────────────────────────
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Attack_Hit)
 
@@ -35,6 +38,9 @@ namespace MRGameplayTags
 	// ─── SetByCaller 크기 키 ────────────────────────────────────────────────
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Damage)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_StaminaCost)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_MaxHealth)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_AttackPower)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_DefensePower)
 
 	// ─── 어빌리티 식별 ───────────────────────────────────────────────────────
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Walk)
@@ -46,4 +52,16 @@ namespace MRGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ShieldMode)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Aim)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_LockOn)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack_BowNormal)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack_BowAimed)
+
+	// ─── 몬스터 공격 어빌리티 식별 ──────────────────────────────────────────
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_Bite)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_ClawAttack)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_TwoHitCombo)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_SpitFireBall)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_SpreadFire)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_TakeOff)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_Land)
 }

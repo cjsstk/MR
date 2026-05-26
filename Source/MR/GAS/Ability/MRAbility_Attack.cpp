@@ -7,7 +7,9 @@
 #include "MREffect_AttackStaminaCost.h"
 #include "MREffect_AttackDamage.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
 UMRAbility_Attack::UMRAbility_Attack()
 {
@@ -51,6 +53,11 @@ void UMRAbility_Attack::ActivateAbility(
 	}
 
 	CurrentComboIndex = 0;
+
+	HitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, MRGameplayTags::Event_Attack_Hit);
+	HitEventTask->EventReceived.AddDynamic(this, &UMRAbility_Attack::OnHitEventReceived);
+	HitEventTask->ReadyForActivation();
+
 	PlayComboMontage();
 }
 
@@ -65,6 +72,12 @@ void UMRAbility_Attack::EndAbility(
 	if (UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get())
 	{
 		ASC->RemoveLooseGameplayTag(MRGameplayTags::Character_State_Attacking);
+	}
+
+	if (HitEventTask)
+	{
+		HitEventTask->EndTask();
+		HitEventTask = nullptr;
 	}
 
 	ResetCombo();
@@ -208,6 +221,23 @@ void UMRAbility_Attack::ApplyDamageToTarget(UAbilitySystemComponent* TargetASC)
 		Spec.Data->SetSetByCallerMagnitude(MRGameplayTags::SetByCaller_Damage, FinalDamage);
 		SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), TargetASC);
 	}
+}
+
+void UMRAbility_Attack::OnHitEventReceived(FGameplayEventData Payload)
+{
+	AActor* HitActor = const_cast<AActor*>(Payload.Target.Get());
+	if (!HitActor)
+	{
+		return;
+	}
+
+	IAbilitySystemInterface* TargetASCOwner = Cast<IAbilitySystemInterface>(HitActor);
+	if (!TargetASCOwner)
+	{
+		return;
+	}
+
+	ApplyDamageToTarget(TargetASCOwner->GetAbilitySystemComponent());
 }
 
 void UMRAbility_Attack::OnMontageCompleted()

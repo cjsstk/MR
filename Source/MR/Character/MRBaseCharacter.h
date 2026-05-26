@@ -6,7 +6,10 @@
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayAbilitySpec.h"
+#include "GameplayTagContainer.h"
 #include "MRBaseCharacter.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMRDeathDelegate);
 
 class UAbilitySystemComponent;
 class UMRAttributeSetBase;
@@ -30,9 +33,21 @@ public:
 
 	UMRAttributeSetBase* GetAttributeSetBase() const { return AttributeSetBase; }
 
+	bool IsDead() const { return bIsDead; }
+
+	/** 사망 시 브로드캐스트 (외부 시스템 구독용) */
+	UPROPERTY(BlueprintAssignable)
+	FOnMRDeathDelegate OnDeath;
+
 protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void BeginPlay() override;
+
+	/**
+	 * 사망 처리. ASC에 Character.State.Dead 태그가 추가될 때 한 번 호출된다.
+	 * 서브클래스에서 override해 몬스터 소멸/플레이어 리스폰 등을 구현한다.
+	 */
+	virtual void HandleDeath();
 
 	// 기본 어빌리티 부여 - PossessedBy에서 한 번만 호출됨
 	virtual void InitializeAbilities();
@@ -56,4 +71,7 @@ protected:
 
 private:
 	bool bAbilitiesInitialized = false;
+	bool bIsDead = false;
+
+	void OnDeadTagChanged(const FGameplayTag Tag, int32 NewCount);
 };

@@ -4,6 +4,7 @@
 #include "GameplayEffectExtension.h"
 #include "AbilitySystemComponent.h"
 #include "MREffect_StaminaRegenDelay.h"
+#include "MRGameplayTags.h"
 
 UMRAttributeSetBase::UMRAttributeSetBase()
 {
@@ -36,6 +37,17 @@ void UMRAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectModCall
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+
+		// 체력이 0에 도달하면 Dead 태그를 부착해 캐릭터의 HandleDeath()를 트리거한다.
+		// 태그 중복 부착 방지를 위해 이미 Dead인 경우 스킵.
+		if (GetHealth() <= 0.f)
+		{
+			UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent();
+			if (ASC && !ASC->HasMatchingGameplayTag(MRGameplayTags::Character_State_Dead))
+			{
+				ASC->AddLooseGameplayTag(MRGameplayTags::Character_State_Dead);
+			}
+		}
 	}
 	else if (Data.EvaluatedData.Attribute == GetStaminaAttribute())
 	{

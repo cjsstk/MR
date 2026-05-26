@@ -3,6 +3,9 @@
 #include "MRBaseCharacter.h"
 #include "AbilitySystemComponent.h"
 #include "MRAttributeSetBase.h"
+#include "MRGameplayTags.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 AMRBaseCharacter::AMRBaseCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -35,6 +38,47 @@ void AMRBaseCharacter::PossessedBy(AController* NewController)
 void AMRBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->RegisterGameplayTagEvent(
+			MRGameplayTags::Character_State_Dead,
+			EGameplayTagEventType::NewOrRemoved
+		).AddUObject(this, &AMRBaseCharacter::OnDeadTagChanged);
+	}
+}
+
+void AMRBaseCharacter::OnDeadTagChanged(const FGameplayTag /*Tag*/, int32 NewCount)
+{
+	if (NewCount > 0 && !bIsDead)
+	{
+		bIsDead = true;
+		HandleDeath();
+	}
+}
+
+void AMRBaseCharacter::HandleDeath()
+{
+	// 진행 중인 모든 어빌리티 취소
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->CancelAllAbilities();
+	}
+
+	// 이동 정지 및 낙하 방지
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		MoveComp->DisableMovement();
+	}
+
+	// 캡슐 충돌 비활성화 (다른 캐릭터에 물리적으로 영향 주지 않도록)
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	OnDeath.Broadcast();
 }
 
 void AMRBaseCharacter::InitializeAbilities()

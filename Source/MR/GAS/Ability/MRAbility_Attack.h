@@ -9,6 +9,7 @@
 #include "MRAbility_Attack.generated.h"
 
 class UAbilityTask_PlayMontageAndWait;
+class UAbilityTask_WaitGameplayEvent;
 
 /**
  * 4콤보 기본 공격 어빌리티.
@@ -115,4 +116,11 @@ private:
 	/** 현재 재생 중인 몽타주 태스크 참조 — 중복 재생 방지 */
 	UPROPERTY()
 	TObjectPtr<UAbilityTask_PlayMontageAndWait> CurrentMontageTask;
+
+	/** 히트 이벤트 수신 태스크 — 어빌리티 활성 구간 전체에서 유지 */
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> HitEventTask;
+
+	UFUNCTION()
+	void OnHitEventReceived(FGameplayEventData Payload);
 };

@@ -25,7 +25,7 @@ struct FMRWeaponAbilityConfig
 	GENERATED_BODY()
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UMRAbility_Attack> LightAttackClass;
+	TSubclassOf<UMRGameplayAbility> LightAttackClass;
 
 	/** 한손검/양손검: HeavyAttack 어빌리티, 활: Aim 어빌리티 */
 	UPROPERTY(EditDefaultsOnly)
@@ -33,15 +33,15 @@ struct FMRWeaponAbilityConfig
 
 	/** 방패 모드 약공격 (한손검 전용, 없으면 무시) */
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UMRAbility_Attack> ShieldLightClass;
+	TSubclassOf<UMRGameplayAbility> ShieldLightClass;
 
 	/** 방패 모드 강공격 (한손검 전용, 없으면 무시) */
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UMRAbility_Attack> ShieldHeavyClass;
+	TSubclassOf<UMRGameplayAbility> ShieldHeavyClass;
 
 	/** 조준 중 공격 (활 전용). 미설정 시 LightAttackClass 사용. */
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UMRAbility_Attack> AimedAttackClass;
+	TSubclassOf<UMRGameplayAbility> AimedAttackClass;
 
 	/** 특수 액션: 한손검=ShieldMode 토글, 활=근접 공격 */
 	UPROPERTY(EditDefaultsOnly)
