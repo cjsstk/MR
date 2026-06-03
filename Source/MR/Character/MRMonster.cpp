@@ -8,6 +8,8 @@
 #include "MRAIController.h"
 #include "MRAttributeSetBase.h"
 #include "MRMonsterHealthBarWidget.h"
+#include "AIController.h"
+#include "BrainComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 
@@ -160,6 +162,16 @@ void AMRMonster::HandleDeath()
 	if (HealthBarWidgetComponent)
 	{
 		HealthBarWidgetComponent->SetVisibility(false);
+	}
+
+	// BehaviorTree 중단 — 사망 후 AI 로직이 계속 실행되지 않도록
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UBrainComponent* Brain = AIController->GetBrainComponent())
+		{
+			Brain->StopLogic(TEXT("Death"));
+			UE_LOG(LogTemp, Log, TEXT("[MRMonster] %s AI logic stopped on death."), *GetName());
+		}
 	}
 
 	Super::HandleDeath();
