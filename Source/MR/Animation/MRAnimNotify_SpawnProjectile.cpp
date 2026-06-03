@@ -58,14 +58,22 @@ void UMRAnimNotify_SpawnProjectile::Notify(
 
 	// ── 발사 방향 계산 ──────────────────────────────────────────────────────
 	FVector LaunchDir;
+	FVector CameraLocation  = FVector::ZeroVector;
+	FRotator CameraRotation = FRotator::ZeroRotator;
 
 	const bool bAiming = ASC && ASC->HasMatchingGameplayTag(MRGameplayTags::Character_State_Aiming);
 	if (bAiming)
 	{
-		// 조준 모드: 카메라 중심에서 LineTrace → 목표점 계산
-		FVector CameraLocation;
-		FRotator CameraRotation;
-
+		// 조준 모드: 카메라 → 목표점 트레이스 후 (목표점 - 소켓) 방향으로 발사.
+		//
+		// CameraRotation.Vector() 방식은 소켓이 카메라 왼쪽에 있으면
+		// 발사 궤적이 항상 크로스헤어보다 왼쪽에 고정되는 문제가 있다.
+		// 반면 목표점을 구하고 (T - S)로 방향을 잡으면 소켓 위치와 무관하게
+		// 화살이 크로스헤어가 가리키는 지점에 도달한다.
+		//
+		// 트레이스를 ECC_Visibility 단일 채널 대신 WorldStatic·WorldDynamic·Pawn
+		// Object 쿼리로 바꿔 몬스터 캡슐을 반드시 히트하도록 한다.
+		// (ECC_Visibility 설정과 무관하게 Pawn ObjectType 으로 직접 탐색)
 		APawn* PawnOwner = Cast<APawn>(Owner);
 		APlayerController* PC = PawnOwner ? Cast<APlayerController>(PawnOwner->GetController()) : nullptr;
 
@@ -76,7 +84,6 @@ void UMRAnimNotify_SpawnProjectile::Notify(
 		}
 		else
 		{
-			// 폴백: 액터 눈높이 위치 + 제어 회전
 			CameraLocation = Owner->GetActorLocation() + FVector(0.f, 0.f, 80.f);
 			CameraRotation = Owner->GetInstigatorController()
 				? Owner->GetInstigatorController()->GetControlRotation()
@@ -85,26 +92,21 @@ void UMRAnimNotify_SpawnProjectile::Notify(
 
 		const FVector TraceEnd = CameraLocation + CameraRotation.Vector() * AimTraceDistance;
 
+		FCollisionObjectQueryParams ObjParams;
+		ObjParams.AddObjectTypesToQuery(ECC_WorldStatic);
+		ObjParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+		ObjParams.AddObjectTypesToQuery(ECC_Pawn);
+
 		FHitResult TraceHit;
 		FCollisionQueryParams TraceParams;
 		TraceParams.AddIgnoredActor(Owner);
 
-		FVector TargetPoint;
-		if (Owner->GetWorld()->LineTraceSingleByChannel(
-			TraceHit,
-			CameraLocation,
-			TraceEnd,
-			ECC_Visibility,
-			TraceParams))
-		{
-			TargetPoint = TraceHit.ImpactPoint;
-		}
-		else
-		{
-			TargetPoint = TraceEnd;
-		}
+		const FVector TargetPoint = Owner->GetWorld()->LineTraceSingleByObjectType(
+			TraceHit, CameraLocation, TraceEnd, ObjParams, TraceParams)
+			? TraceHit.ImpactPoint
+			: TraceEnd;
 
-		// 소켓 → 목표점 방향
+		// 소켓 → 목표점: 화살이 크로스헤어가 가리키는 지점으로 수렴한다
 		LaunchDir = (TargetPoint - SpawnLocation).GetSafeNormal();
 	}
 	else
@@ -158,16 +160,15 @@ void UMRAnimNotify_SpawnProjectile::Notify(
 #if ENABLE_DRAW_DEBUG
 	if (CVarProjectileDebug.GetValueOnGameThread() != 0)
 	{
-		DrawDebugLine(
-			World,
-			SpawnLocation,
-			SpawnLocation + LaunchDir * 500.f,
-			FColor::Yellow,
-			false,
-			5.f,
-			0,
-			2.f
-		);
+		// 노란색: 실제 발사 방향 (소켓 기준)
+		DrawDebugLine(World, SpawnLocation, SpawnLocation + LaunchDir * 500.f,
+			FColor::Yellow, false, 5.f, 0, 2.f);
+		if (bAiming)
+		{
+			// 초록색: 카메라 기준 조준선 (크로스헤어 방향)
+			DrawDebugLine(World, CameraLocation, CameraLocation + CameraRotation.Vector() * 500.f,
+				FColor::Green, false, 5.f, 0, 2.f);
+		}
 	}
 #endif
 }

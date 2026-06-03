@@ -6,6 +6,10 @@
 #include "MRBaseCharacter.h"
 #include "MRMonster.generated.h"
 
+class UWidgetComponent;
+class UMRMonsterHealthBarWidget;
+struct FOnAttributeChangeData;
+
 /**
  * AI가 조작하는 몬스터 캐릭터.
  * MonsterType으로 CMS DataTable(FMonsterTableRow)과 연결하고,
@@ -33,6 +37,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void HandleDeath() override;
 
@@ -41,4 +46,18 @@ private:
 	void InitializeMonsterStats();
 
 	void DestroyAfterDeath();
+
+	// 머리 위 체력바 위젯 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWidgetComponent> HealthBarWidgetComponent;
+
+	// 캐시된 체력바 위젯 포인터 (매 프레임 Cast 방지)
+	UPROPERTY()
+	TObjectPtr<UMRMonsterHealthBarWidget> HealthBarWidget;
+
+	void OnHealthChanged(const FOnAttributeChangeData& Data);
+
+	// CVar 토글 시 전체 몬스터 가시성 일괄 변경용 정적 레지스트리
+	static TArray<TWeakObjectPtr<AMRMonster>> AliveMonsters;
+	static void OnShowHealthBarCVarChanged(IConsoleVariable* CVar);
 };

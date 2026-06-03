@@ -40,9 +40,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Projectile")
 	float UnamedLaunchPitchOffset = 10.f;
 
-	/** 조준 모드 LineTrace 최대 거리 (cm) */
+	/** 조준 모드 트레이스 최대 거리 (cm) */
 	UPROPERTY(EditAnywhere, Category = "Projectile", meta = (ClampMin = "100.0"))
 	float AimTraceDistance = 15000.f;
+
 
 	virtual FString GetNotifyName_Implementation() const override;
 

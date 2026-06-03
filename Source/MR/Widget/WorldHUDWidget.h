@@ -7,6 +7,7 @@
 #include "WorldHUDWidget.generated.h"
 
 class UCharacterStatusWidget;
+class UMRCrosshairWidget;
 
 /**
  * UWorldHUDWidget
@@ -28,4 +29,7 @@ public:
 private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UCharacterStatusWidget> CharacterStatusWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UMRCrosshairWidget> CrosshairWidget;
 };
