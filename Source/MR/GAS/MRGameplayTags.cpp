@@ -48,4 +48,6 @@ namespace MRGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Monster_SpreadFire,  "Ability.Monster.SpreadFire",  "몬스터 범위 화염 브레스")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Monster_TakeOff,     "Ability.Monster.TakeOff",     "몬스터 이륙 전환")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Monster_Land,        "Ability.Monster.Land",        "몬스터 착지 전환")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Monster_FlySpitFireBall, "Ability.Monster.FlySpitFireBall", "몬스터 비행 중 화염구 발사")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Monster_FlySpreadFire,   "Ability.Monster.FlySpreadFire",   "몬스터 비행 중 범위 화염 브레스")
 }

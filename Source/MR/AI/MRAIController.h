@@ -31,6 +31,9 @@ public:
 	/** Blackboard IsFlying 키 이름. 비행 상태 동기화. */
 	static const FName BBKey_IsFlying;
 
+	/** Blackboard NestLocation 키. 둥지 위치 — 스포너에서 초기화. */
+	static const FName BBKey_NestLocation;
+
 	/** BP 서브클래스에서 할당. null이면 BT를 실행하지 않는다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	TObjectPtr<UBehaviorTree> BehaviorTree;

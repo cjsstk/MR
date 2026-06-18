@@ -7,6 +7,9 @@
 #include "MREnum.h"
 #include "MRDataTable.generated.h"
 
+class UBehaviorTree;
+class AMRMonster;
+
 /**
  * 드롭 풀 항목 하나. FDropTableRow의 Entries 배열 원소로 사용된다.
  * 확률은 Weight 합산 후 비율로 계산한다 (e.g. Weight=70+30 → 70%, 30%).
@@ -316,6 +319,16 @@ struct MR_API FMonsterTableRow : public FTableRowBase
 	/** 포획 보상 드롭 풀. FDropTableRow의 RowName. 비어있으면 NormalDropTableId 사용. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Drop")
 	FName CaptureDropTableId;
+
+	// ─── AI ────────────────────────────────────────────────────────────────────
+
+	/** 스폰할 몬스터 BP 클래스. 스포너가 MonsterType으로 이 클래스를 조회해 스폰한다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|AI")
+	TSoftClassPtr<AMRMonster> MonsterClass;
+
+	/** 이 몬스터가 사용할 BehaviorTree. 빙의 시 AIController에 주입된다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|AI")
+	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
 };
 
 // ─── 필드 ──────────────────────────────────────────────────────────────────

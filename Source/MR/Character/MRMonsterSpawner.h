@@ -25,6 +25,13 @@ struct FMRSpawnEntry
 	/** 사망 후 재스폰 대기 시간(초). 0이면 재스폰 없음. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spawn", meta=(ClampMin=0.f))
 	float RespawnDelay = 30.f;
+
+	/**
+	 * 둥지 위치 오프셋 (스포너 액터 기준 로컬 오프셋, cm).
+	 * Zero이면 둥지 이동 시스템을 사용하지 않는다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spawn")
+	FVector NestLocationOffset = FVector::ZeroVector;
 };
 
 /**
@@ -69,7 +76,11 @@ protected:
 	 */
 	virtual void OnMonsterSpawned(AMRMonster* Monster, int32 EntryIndex);
 
-	/** 스폰할 몬스터 BP 클래스. BP 서브클래스의 Class Defaults에서 지정. */
+	/**
+	 * 스폰할 몬스터 BP 클래스 폴백.
+	 * DataTable의 FMonsterTableRow::MonsterClass가 설정되어 있으면 그쪽이 우선된다.
+	 * DataTable에 클래스가 없을 때만 이 값을 사용한다.
+	 */
 	UPROPERTY(EditDefaultsOnly, Category="Spawner")
 	TSubclassOf<AMRMonster> MonsterClass;
 

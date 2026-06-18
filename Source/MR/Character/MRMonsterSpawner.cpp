@@ -2,6 +2,11 @@
 
 #include "MRMonsterSpawner.h"
 #include "MRMonster.h"
+#include "CMSSubsystem.h"
+#include "MRDataTable.h"
+#include "AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "MRAIController.h"
 
 AMRMonsterSpawner::AMRMonsterSpawner(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -45,12 +50,6 @@ void AMRMonsterSpawner::SpawnAll()
 
 void AMRMonsterSpawner::SpawnOneMonster(int32 EntryIndex)
 {
-	if (!MonsterClass)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("AMRMonsterSpawner [%s]: MonsterClass가 설정되지 않았습니다."), *GetName());
-		return;
-	}
-
 	if (!SpawnEntries.IsValidIndex(EntryIndex))
 	{
 		return;
@@ -63,11 +62,32 @@ void AMRMonsterSpawner::SpawnOneMonster(int32 EntryIndex)
 	}
 
 	const FMRSpawnEntry& Entry = SpawnEntries[EntryIndex];
+
+	// DataTable에서 MonsterType에 맞는 클래스 조회. 없으면 폴백 MonsterClass 사용.
+	TSubclassOf<AMRMonster> ClassToSpawn = MonsterClass;
+	if (UCMSSubsystem* CMS = GetGameInstance()->GetSubsystem<UCMSSubsystem>())
+	{
+		if (const FMonsterTableRow* Row = CMS->GetMonsterRow(Entry.MonsterType))
+		{
+			if (!Row->MonsterClass.IsNull())
+			{
+				ClassToSpawn = Row->MonsterClass.LoadSynchronous();
+			}
+		}
+	}
+
+	if (!ClassToSpawn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AMRMonsterSpawner [%s]: MonsterType=%d에 해당하는 클래스가 없습니다. DataTable 또는 MonsterClass를 확인하세요."),
+			*GetName(), Entry.MonsterType);
+		return;
+	}
+
 	const FTransform SpawnTransform = GetSpawnTransform();
 
 	// BeginPlay 이전에 MonsterType을 설정할 수 있도록 Deferred 스폰 사용
 	AMRMonster* Monster = World->SpawnActorDeferred<AMRMonster>(
-		MonsterClass,
+		ClassToSpawn,
 		SpawnTransform,
 		nullptr,
 		nullptr,
@@ -84,6 +104,21 @@ void AMRMonsterSpawner::SpawnOneMonster(int32 EntryIndex)
 
 	Monster->OnDestroyed.AddDynamic(this, &AMRMonsterSpawner::OnMonsterDestroyed);
 	MonsterEntryMap.Add(TObjectKey<AMRMonster>(Monster), EntryIndex);
+
+	// 둥지 위치가 설정된 경우 BB에 주입 (BT Phase2 시퀀스에서 사용)
+	if (!Entry.NestLocationOffset.IsZero())
+	{
+		if (AAIController* AIC = Cast<AAIController>(Monster->GetController()))
+		{
+			if (UBlackboardComponent* BB = AIC->GetBlackboardComponent())
+			{
+				const FVector NestWorldLocation = GetActorLocation() + Entry.NestLocationOffset;
+				BB->SetValueAsVector(AMRAIController::BBKey_NestLocation, NestWorldLocation);
+				UE_LOG(LogTemp, Log, TEXT("[MRMonsterSpawner] Monster(%s) NestLocation set: %s"),
+					*Monster->GetName(), *NestWorldLocation.ToString());
+			}
+		}
+	}
 
 	OnMonsterSpawned(Monster, EntryIndex);
 }

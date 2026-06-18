@@ -64,4 +64,8 @@ namespace MRGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_SpreadFire)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_TakeOff)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_Land)
+
+	// 비행 중 공격 어빌리티
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_FlySpitFireBall)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_FlySpreadFire)
 }

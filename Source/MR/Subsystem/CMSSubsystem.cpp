@@ -2,14 +2,13 @@
 
 
 #include "Subsystem/CMSSubsystem.h"
-#include "Settings/MRCMSSettings.h"
 
 void UCMSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	// UMRCMSSettings(Project Settings)에 등록된 DataTable을 동기 로드하여 캐시
-	for (auto& [Name, SoftTable] : UMRCMSSettings::Get()->TablePaths)
+	// BP 서브클래스(BP_CMS)의 Class Defaults에 등록된 TablePaths를 동기 로드하여 캐시
+	for (auto& [Name, SoftTable] : TablePaths)
 	{
 		if (SoftTable.IsNull())
 		{
@@ -26,6 +25,8 @@ void UCMSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 
 		LoadedTables.Add(Name, Table);
+		UE_LOG(LogTemp, Log, TEXT("UCMSSubsystem: '%s' DataTable 로드 완료 (%d rows)"),
+			*Name.ToString(), Table->GetRowNames().Num());
 	}
 }
 

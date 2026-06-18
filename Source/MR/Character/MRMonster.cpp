@@ -9,6 +9,7 @@
 #include "MRAttributeSetBase.h"
 #include "MRMonsterHealthBarWidget.h"
 #include "AIController.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BrainComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
@@ -106,6 +107,29 @@ void AMRMonster::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AMRMonster::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+
+	// DataTable에서 BehaviorTree를 읽어 AIController에 주입한다.
+	// OnPossess(AIController)보다 먼저 호출되므로 BT가 즉시 반영된다.
+	if (AMRAIController* AIC = Cast<AMRAIController>(NewController))
+	{
+		if (UCMSSubsystem* CMS = GetGameInstance()->GetSubsystem<UCMSSubsystem>())
+		{
+			if (const FMonsterTableRow* Row = CMS->GetMonsterRow(MonsterType))
+			{
+				if (!Row->BehaviorTree.IsNull())
+				{
+					AIC->BehaviorTree = Row->BehaviorTree.LoadSynchronous();
+					UE_LOG(LogTemp, Log, TEXT("[MRMonster] Type=%d BehaviorTree=%s"),
+						MonsterType, *AIC->BehaviorTree->GetName());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("[MRMonster] Type=%d has no BehaviorTree in DataTable"), MonsterType);
+				}
+			}
+		}
+	}
+
 	InitializeMonsterStats();
 }
 

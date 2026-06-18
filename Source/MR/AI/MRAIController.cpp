@@ -8,6 +8,7 @@
 const FName AMRAIController::BBKey_TargetActor  = TEXT("TargetActor");
 const FName AMRAIController::BBKey_HomeLocation = TEXT("HomeLocation");
 const FName AMRAIController::BBKey_IsFlying     = TEXT("IsFlying");
+const FName AMRAIController::BBKey_NestLocation = TEXT("NestLocation");
 
 AMRAIController::AMRAIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
