@@ -5,9 +5,10 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MRStore/StoreBase.h"
+#include "CharacterStore.h"
+#include "InventoryStore.h"
 #include "HUDStore.generated.h"
 
-class UCharacterStore;
 class UActionDispatcher;
 
 /**
@@ -35,6 +36,7 @@ public:
 	// --- Store Getters ---
 
 	UCharacterStore* GetCharacterStore() const { return GetStore<UCharacterStore>(); }
+	UInventoryStore*     GetInventoryStore()     const { return GetStore<UInventoryStore>(); }
 
 	template<typename T>
 	T* GetStore() const

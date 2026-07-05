@@ -30,10 +30,10 @@ protected:
 
 	/**
 	 * 이동할 필드 ID (FFieldTableRow의 RowName).
-	 * 빈 값으로 두면 마을 귀환 게이트로 동작한다.
+	 * 0으로 두면 마을 귀환 게이트로 동작한다.
 	 */
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Travel")
-	FName DestinationFieldId;
+	int32 DestinationFieldId = 0;
 
 private:
 	UPROPERTY(VisibleAnywhere)

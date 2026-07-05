@@ -4,6 +4,7 @@
 #include "AbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Component/MRCharacterMovementComponent.h"
+#include "MRInventoryComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/Controller.h"
@@ -13,6 +14,8 @@
 #include "MRAbility_Dodge.h"
 #include "MRAbility_Attack.h"
 #include "MRAbility_LockOn.h"
+#include "GAS/Ability/MRAbility_Carve.h"
+#include "MRMonster.h"
 #include "MRGameplayTags.h"
 #include "MRAttributeSetBase.h"
 #include "Action/Action.h"
@@ -24,6 +27,8 @@ AMRPlayerCharacter::AMRPlayerCharacter(const FObjectInitializer& ObjectInitializ
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
+
+	InventoryComponent = ObjectInitializer.CreateDefaultSubobject<UMRInventoryComponent>(this, TEXT("InventoryComponent"));
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -83,6 +88,12 @@ void AMRPlayerCharacter::PossessedBy(AController* NewController)
 		SprintAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(SprintClass, 1, INDEX_NONE, this));
 		DodgeAbilityHandle  = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(DodgeClass,  1, INDEX_NONE, this));
 		LockOnAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(LockOnClass, 1, INDEX_NONE, this));
+
+		if (CarveAbilityClass)
+		{
+			CarveAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(CarveAbilityClass, 1, INDEX_NONE, this));
+		}
+
 		SwapWeaponAbilities(CurrentWeaponType);
 
 		// 초기 체력/스태미나 값을 Store에 반영
@@ -90,8 +101,8 @@ void AMRPlayerCharacter::PossessedBy(AController* NewController)
 		{
 			if (UActionDispatcher* Dispatcher = GetActionDispatcher(this))
 			{
-				Dispatcher->Dispatch(Actions::SetHealth(AttrSet->GetHealth(), AttrSet->GetMaxHealth()));
-				Dispatcher->Dispatch(Actions::SetStamina(AttrSet->GetStamina(), AttrSet->GetMaxStamina()));
+				Dispatcher->Dispatch(MakeAction<FAction_SetHealth>(AttrSet->GetHealth(), AttrSet->GetMaxHealth()));
+				Dispatcher->Dispatch(MakeAction<FAction_SetStamina>(AttrSet->GetStamina(), AttrSet->GetMaxStamina()));
 			}
 		}
 
@@ -169,6 +180,11 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (LockOnAction)
 		{
 			EIC->BindAction(LockOnAction, ETriggerEvent::Started, this, &AMRPlayerCharacter::OnLockOnInput);
+		}
+
+		if (InteractAction)
+		{
+			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &AMRPlayerCharacter::OnInteractInput);
 		}
 	}
 }
@@ -304,7 +320,7 @@ void AMRPlayerCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 	if (UActionDispatcher* Dispatcher = GetActionDispatcher(this))
 	{
 		const float MaxHealth = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetMaxHealthAttribute());
-		Dispatcher->Dispatch(Actions::SetHealth(Data.NewValue, MaxHealth));
+		Dispatcher->Dispatch(MakeAction<FAction_SetHealth>(Data.NewValue, MaxHealth));
 	}
 }
 
@@ -313,7 +329,7 @@ void AMRPlayerCharacter::OnStaminaChanged(const FOnAttributeChangeData& Data)
 	if (UActionDispatcher* Dispatcher = GetActionDispatcher(this))
 	{
 		const float MaxStamina = AbilitySystemComponent->GetNumericAttribute(UMRAttributeSetBase::GetMaxStaminaAttribute());
-		Dispatcher->Dispatch(Actions::SetStamina(Data.NewValue, MaxStamina));
+		Dispatcher->Dispatch(MakeAction<FAction_SetStamina>(Data.NewValue, MaxStamina));
 	}
 }
 
@@ -525,5 +541,43 @@ void AMRPlayerCharacter::LinkWeaponAnimLayer(EMRWeaponType WeaponType)
 	if (Config && Config->AnimLayerClass)
 	{
 		GetMesh()->LinkAnimClassLayers(Config->AnimLayerClass);
+	}
+}
+
+void AMRPlayerCharacter::OnInteractInput(const FInputActionValue& Value)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	if (!NearestCarvableMonster.IsValid() || !NearestCarvableMonster->CanBeCarved())
+	{
+		return;
+	}
+
+	// 어빌리티 인스턴스에 타겟 몬스터를 전달한 뒤 활성화
+	FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromHandle(CarveAbilityHandle);
+	if (Spec)
+	{
+		if (UMRAbility_Carve* CarveAbility = Cast<UMRAbility_Carve>(Spec->GetPrimaryInstance()))
+		{
+			CarveAbility->SetTargetMonster(NearestCarvableMonster.Get());
+		}
+	}
+
+	AbilitySystemComponent->TryActivateAbility(CarveAbilityHandle);
+}
+
+void AMRPlayerCharacter::SetCarvableMonster(AMRMonster* Monster)
+{
+	NearestCarvableMonster = Monster;
+}
+
+void AMRPlayerCharacter::ClearCarvableMonster(AMRMonster* Monster)
+{
+	if (NearestCarvableMonster.Get() == Monster)
+	{
+		NearestCarvableMonster = nullptr;
 	}
 }

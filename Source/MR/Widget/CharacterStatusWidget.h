@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "MRStore/MVVMWidgetBase.h"
+#include "Action/ActionTypes.h"
 #include "CharacterStatusWidget.generated.h"
 
 class UProgressBar;
 class UCharacterStore;
-struct FCharacterState;
+struct FAction_SetHealth;
+struct FAction_SetStamina;
 
 /**
  * UCharacterStatusWidget
@@ -26,11 +28,10 @@ class MR_API UCharacterStatusWidget : public UMVVMWidgetBase
 
 protected:
 	virtual void NativeConstruct() override;
-	virtual void OnStoreStateChanged(UStoreBase* Store, FName FieldName) override;
 
 private:
-	void RefreshHealth(const FCharacterState& State);
-	void RefreshStamina(const FCharacterState& State);
+	DECLARE_ACTION_HANDLER(HandleHealthChanged, SetHealth);
+	DECLARE_ACTION_HANDLER(HandleStaminaChanged, SetStamina);
 
 	// UMG 에디터에서 동일한 이름의 위젯과 자동 바인딩
 	UPROPERTY(meta = (BindWidget))

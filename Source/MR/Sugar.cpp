@@ -7,6 +7,7 @@
 #include "MRGameInstance.h"
 #include "Store/HUDStore.h"
 #include "Store/CharacterStore.h"
+#include "Store/InventoryStore.h"
 #include "Action/Action.h"
 #include "Travel/MRTravelSubsystem.h"
 #include "Engine/GameInstance.h"
@@ -62,6 +63,12 @@ UCharacterStore* GetCharacterStore(const UObject* InObject)
 {
 	UHUDStore* HUDStore = GetHUDStore(InObject);
 	return HUDStore ? HUDStore->GetCharacterStore() : nullptr;
+}
+
+UInventoryStore* GetInventoryStore(const UObject* InObject)
+{
+	UHUDStore* HUDStore = GetHUDStore(InObject);
+	return HUDStore ? HUDStore->GetInventoryStore() : nullptr;
 }
 
 UActionDispatcher* GetActionDispatcher(const UObject* InObject)

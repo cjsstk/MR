@@ -6,6 +6,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Engine/DataTable.h"
 #include "MRDataTable.h"
+#include "MRStrongId.h"
 #include "CMSSubsystem.generated.h"
 
 /**
@@ -46,15 +47,16 @@ public:
 	FMonsterTableRow* GetMonsterRow(int32 Type) const;
 
 	/** Drop Table Row를 DropTableId(RowName)로 조회한다. 없으면 nullptr. */
-	FDropTableRow* GetDropTableRow(FName DropTableId) const;
+	FDropTableRow* GetDropTableRow(FDropTableId DropTableId) const;
 
-	FItemTableRow*       GetItemRow(FName ItemId) const;
-	FDecorationTableRow* GetDecorationRow(FName DecoId) const;
-	FWeaponTableRow*     GetWeaponRow(FName WeaponId) const;
-	FArmorTableRow*      GetArmorRow(FName ArmorId) const;
-	FSkillTableRow*      GetSkillRow(FName SkillId) const;
-	FRecipeTableRow*     GetRecipeRow(FName RecipeId) const;
-	FFieldTableRow*      GetFieldRow(FName FieldId) const;
+	FItemTableRow*       GetItemRow(FItemId ItemId) const;
+	/** 장식주 Row 조회. RowName이 대응 FItemTableRow와 같으므로 FItemId를 그대로 쓴다. */
+	FDecorationTableRow* GetDecorationRow(FItemId ItemId) const;
+	FWeaponTableRow*     GetWeaponRow(FWeaponId WeaponId) const;
+	FArmorTableRow*      GetArmorRow(FArmorId ArmorId) const;
+	FSkillTableRow*      GetSkillRow(FSkillId SkillId) const;
+	FRecipeTableRow*     GetRecipeRow(FRecipeId RecipeId) const;
+	FFieldTableRow*      GetFieldRow(FFieldId FieldId) const;
 
 protected:
 	/** BP 서브클래스(BP_CMS)의 Class Defaults에서 설정한다. Key: 조회 이름, Value: DataTable 에셋 */

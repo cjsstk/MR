@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MRTravelTypes.h"
+#include "MRStrongId.h"
 #include "MRTravelSubsystem.generated.h"
 
 class AMRPlayerCharacter;
@@ -30,7 +31,7 @@ public:
 	 * @param WorldContext  호출 컨텍스트 (TravelGate 액터 등)
 	 * @param FieldId       FFieldTableRow의 RowName
 	 */
-	void RequestTravel(const UObject* WorldContext, FName FieldId);
+	void RequestTravel(const UObject* WorldContext, FFieldId FieldId);
 
 	/** 마을로 귀환 요청 */
 	void RequestReturnToVillage(const UObject* WorldContext);
@@ -42,7 +43,7 @@ public:
 	void RestorePlayerState(AMRPlayerCharacter* Player);
 
 	/** 현재 이동 중인(또는 마지막으로 이동한) 필드 ID */
-	FName GetCurrentFieldId() const { return CurrentFieldId; }
+	FFieldId GetCurrentFieldId() const { return FFieldId(CurrentFieldId); }
 
 private:
 	void SavePlayerState(const UObject* WorldContext);
@@ -53,7 +54,7 @@ private:
 	FMRPlayerPersistData PersistData;
 
 	UPROPERTY()
-	FName CurrentFieldId;
+	int32 CurrentFieldId = 0;
 
 	FTimerHandle TravelTimerHandle;
 	FString PendingMapName;

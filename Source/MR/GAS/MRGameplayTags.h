@@ -68,4 +68,14 @@ namespace MRGameplayTags
 	// 비행 중 공격 어빌리티
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_FlySpitFireBall)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Monster_FlySpreadFire)
+
+	// ─── 박리 상태 ───────────────────────────────────────────────────────────
+	// 박리 중 상태 — 이동/공격 차단용
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Carving)
+
+	// ─── 박리 어빌리티 ───────────────────────────────────────────────────────
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Carve)
+
+	// ─── 소비 아이템 SetByCaller 키 ─────────────────────────────────────────
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_HealAmount)
 }

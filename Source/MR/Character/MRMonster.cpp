@@ -8,10 +8,16 @@
 #include "MRAIController.h"
 #include "MRAttributeSetBase.h"
 #include "MRMonsterHealthBarWidget.h"
+#include "MRAbility_Carve.h"
+#include "MRInventoryComponent.h"
+#include "MRDropHelper.h"
+#include "MRPlayerCharacter.h"
+#include "Action/Action.h"
 #include "AIController.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BrainComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 
 static TAutoConsoleVariable<int32> CVarShowMonsterHealthBar(
@@ -34,6 +40,14 @@ AMRMonster::AMRMonster(const FObjectInitializer& ObjectInitializer)
 	HealthBarWidgetComponent->SetupAttachment(RootComponent);
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// 박리 인터랙션 볼륨. 사망 전까지 충돌 비활성화 상태 유지.
+	CarveInteractionVolume = ObjectInitializer.CreateDefaultSubobject<USphereComponent>(this, TEXT("CarveInteractionVolume"));
+	CarveInteractionVolume->SetupAttachment(GetRootComponent());
+	CarveInteractionVolume->SetSphereRadius(200.f);
+	CarveInteractionVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CarveInteractionVolume->SetCollisionResponseToAllChannels(ECR_Ignore);
+	CarveInteractionVolume->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 }
 
 void AMRMonster::BeginPlay()
@@ -198,12 +212,30 @@ void AMRMonster::HandleDeath()
 		}
 	}
 
+	// CMS에서 박리 횟수 초기화
+	if (UCMSSubsystem* CMS = GetGameInstance()->GetSubsystem<UCMSSubsystem>())
+	{
+		if (const FMonsterTableRow* Row = CMS->GetMonsterRow(MonsterType))
+		{
+			RemainingCarves = Row->CarveCount;
+			UE_LOG(LogTemp, Log, TEXT("[MRMonster] %s 박리 횟수 초기화: %d"), *GetName(), RemainingCarves);
+		}
+	}
+
+	// 박리 횟수가 있을 때만 상호작용 볼륨 활성화 및 오버랩 이벤트 바인딩
+	if (CarveInteractionVolume && RemainingCarves > 0)
+	{
+		CarveInteractionVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		CarveInteractionVolume->OnComponentBeginOverlap.AddDynamic(this, &AMRMonster::OnCarveVolumeOverlapBegin);
+		CarveInteractionVolume->OnComponentEndOverlap.AddDynamic(this, &AMRMonster::OnCarveVolumeOverlapEnd);
+	}
+
 	Super::HandleDeath();
 
+	// DestroyAfterDeath 타이머 대신 사체 최대 유지 시간 타이머를 시작한다.
 	// MRMonsterSpawner는 OnDestroyed 이벤트로 재스폰을 처리하므로
-	// 사망 애니메이션 재생 시간 후 Destroy()만 호출하면 된다.
-	FTimerHandle DestroyTimerHandle;
-	GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &AMRMonster::DestroyAfterDeath, DeathDestroyDelay, false);
+	// DestroyCorpse → Destroy() 호출로 충분하다.
+	StartCorpseDestroyTimer(MaxCorpseLifetime);
 }
 
 void AMRMonster::OnHealthChanged(const FOnAttributeChangeData& Data)
@@ -232,6 +264,137 @@ void AMRMonster::OnShowHealthBarCVarChanged(IConsoleVariable* CVar)
 }
 
 void AMRMonster::DestroyAfterDeath()
+{
+	Destroy();
+}
+
+void AMRMonster::PerformCarve(UMRAbility_Carve* CarveAbility)
+{
+	if (!CanBeCarved())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve 실패: 박리 불가 상태 (IsDead=%d, RemainingCarves=%d)"),
+			IsDead(), RemainingCarves);
+		return;
+	}
+
+	if (!CarveAbility)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve 실패: CarveAbility가 nullptr"));
+		return;
+	}
+
+	// CMS에서 드롭 테이블 조회
+	UCMSSubsystem* CMS = GetGameInstance()->GetSubsystem<UCMSSubsystem>();
+	if (!CMS)
+	{
+		return;
+	}
+
+	const FMonsterTableRow* MonsterRow = CMS->GetMonsterRow(MonsterType);
+	if (!MonsterRow || MonsterRow->NormalDropTableId == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve: MonsterType=%d 드롭 테이블 없음"), MonsterType);
+		return;
+	}
+
+	const FDropTableRow* DropTable = CMS->GetDropTableRow(FDropTableId(MonsterRow->NormalDropTableId));
+	if (!DropTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve: DropTableId=%d 테이블 없음"),
+			MonsterRow->NormalDropTableId);
+		return;
+	}
+
+	// 가중치 랜덤으로 아이템 결정
+	const FMRDropResult Result = UMRDropHelper::RollOnce(*DropTable);
+	if (Result.ItemId == 0 || Result.Count <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve: RollOnce 결과 없음"));
+		return;
+	}
+
+	// 플레이어 인벤토리에 아이템 지급
+	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(CarveAbility->GetAvatarActorFromActorInfo());
+	if (Player)
+	{
+		if (UMRInventoryComponent* Inventory = Player->FindComponentByClass<UMRInventoryComponent>())
+		{
+			Inventory->AddItem(FItemId(Result.ItemId), Result.Count);
+		}
+	}
+
+	// 박리 결과 팝업 표시를 위한 액션 디스패치
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UActionDispatcher* Dispatcher = GI->GetSubsystem<UActionDispatcher>())
+		{
+			Dispatcher->Dispatch(MakeAction<FAction_ShowCarveResult>(Result.ItemId, Result.Count));
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[MRMonster] %s 박리: ItemId=%d x%d (남은 횟수 %d → %d)"),
+		*GetName(), Result.ItemId, Result.Count, RemainingCarves, RemainingCarves - 1);
+
+	RemainingCarves--;
+
+	// 박리 횟수 소진 시 볼륨 비활성화 후 단기 소멸 타이머로 전환
+	if (RemainingCarves <= 0)
+	{
+		if (CarveInteractionVolume)
+		{
+			CarveInteractionVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+		StartCorpseDestroyTimer(PostCarveDestroyDelay);
+	}
+}
+
+void AMRMonster::OnCarveVolumeOverlapBegin(
+	UPrimitiveComponent* OverlappedComp,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult)
+{
+	if (!CanBeCarved())
+	{
+		return;
+	}
+
+	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(OtherActor);
+	if (!Player)
+	{
+		return;
+	}
+
+	Player->ShowCarvePrompt(this);
+	Player->SetCarvableMonster(this);
+}
+
+void AMRMonster::OnCarveVolumeOverlapEnd(
+	UPrimitiveComponent* OverlappedComp,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(OtherActor);
+	if (!Player)
+	{
+		return;
+	}
+
+	Player->HideCarvePrompt();
+	Player->ClearCarvableMonster(this);
+}
+
+void AMRMonster::StartCorpseDestroyTimer(float Delay)
+{
+	// 기존 타이머 클리어 후 새 타이머 설정 (박리 완료 시 남은 MaxCorpseLifetime 타이머를 단축)
+	GetWorldTimerManager().ClearTimer(CorpseDestroyTimerHandle);
+	GetWorldTimerManager().SetTimer(CorpseDestroyTimerHandle, this, &AMRMonster::DestroyCorpse, Delay, false);
+}
+
+void AMRMonster::DestroyCorpse()
 {
 	Destroy();
 }

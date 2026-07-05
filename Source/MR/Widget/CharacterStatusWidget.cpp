@@ -3,49 +3,36 @@
 #include "Widget/CharacterStatusWidget.h"
 #include "Components/ProgressBar.h"
 #include "Store/CharacterStore.h"
+#include "Action/Action.h"
 #include "Sugar.h"
 
 void UCharacterStatusWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	BindStore(GetCharacterStore(this));
-}
 
-void UCharacterStatusWidget::OnStoreStateChanged(UStoreBase* Store, FName FieldName)
-{
-	UCharacterStore* CharacterStore = Cast<UCharacterStore>(Store);
-	if (!CharacterStore)
+	if (UCharacterStore* Store = GetCharacterStore(this))
 	{
-		return;
-	}
+		Subscribe<EActionType::SetHealth>(Store, &UCharacterStatusWidget::HandleHealthChanged);
+		Subscribe<EActionType::SetStamina>(Store, &UCharacterStatusWidget::HandleStaminaChanged);
 
-	const FCharacterState& State = CharacterStore->GetState();
-
-	if (FieldName == NAME_None || FieldName == CharacterStoreFields::Health)
-	{
-		RefreshHealth(State);
-	}
-
-	if (FieldName == NAME_None || FieldName == CharacterStoreFields::Stamina)
-	{
-		RefreshStamina(State);
+		const FCharacterState& State = Store->GetState();
+		HandleHealthChanged(FAction_SetHealth{ State.CurrentHealth, State.MaxHealth });
+		HandleStaminaChanged(FAction_SetStamina{ State.CurrentStamina, State.MaxStamina });
 	}
 }
 
-void UCharacterStatusWidget::RefreshHealth(const FCharacterState& State)
+void UCharacterStatusWidget::HandleHealthChanged(const FAction_SetHealth& Action)
 {
 	if (HealthBar)
 	{
-		const float Percent = State.MaxHealth > 0.f ? State.CurrentHealth / State.MaxHealth : 0.f;
-		HealthBar->SetPercent(Percent);
+		HealthBar->SetPercent(Action.Max > 0.f ? Action.Current / Action.Max : 0.f);
 	}
 }
 
-void UCharacterStatusWidget::RefreshStamina(const FCharacterState& State)
+void UCharacterStatusWidget::HandleStaminaChanged(const FAction_SetStamina& Action)
 {
 	if (StaminaBar)
 	{
-		const float Percent = State.MaxStamina > 0.f ? State.CurrentStamina / State.MaxStamina : 0.f;
-		StaminaBar->SetPercent(Percent);
+		StaminaBar->SetPercent(Action.Max > 0.f ? Action.Current / Action.Max : 0.f);
 	}
 }

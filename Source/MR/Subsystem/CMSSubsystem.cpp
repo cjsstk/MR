@@ -48,42 +48,42 @@ FMonsterTableRow* UCMSSubsystem::GetMonsterRow(int32 Type) const
 	return GetRow<FMonsterTableRow>(TEXT("Monster"), FName(FString::FromInt(Type)));
 }
 
-FDropTableRow* UCMSSubsystem::GetDropTableRow(FName DropTableId) const
+FDropTableRow* UCMSSubsystem::GetDropTableRow(FDropTableId DropTableId) const
 {
-	return GetRow<FDropTableRow>(TEXT("Drop"), DropTableId);
+	return GetRow<FDropTableRow>(TEXT("Drop"), DropTableId.ToRowName());
 }
 
-FItemTableRow* UCMSSubsystem::GetItemRow(FName ItemId) const
+FItemTableRow* UCMSSubsystem::GetItemRow(FItemId ItemId) const
 {
-	return GetRow<FItemTableRow>(TEXT("Item"), ItemId);
+	return GetRow<FItemTableRow>(TEXT("Item"), ItemId.ToRowName());
 }
 
-FDecorationTableRow* UCMSSubsystem::GetDecorationRow(FName DecoId) const
+FDecorationTableRow* UCMSSubsystem::GetDecorationRow(FItemId ItemId) const
 {
-	return GetRow<FDecorationTableRow>(TEXT("Decoration"), DecoId);
+	return GetRow<FDecorationTableRow>(TEXT("Decoration"), ItemId.ToRowName());
 }
 
-FWeaponTableRow* UCMSSubsystem::GetWeaponRow(FName WeaponId) const
+FWeaponTableRow* UCMSSubsystem::GetWeaponRow(FWeaponId WeaponId) const
 {
-	return GetRow<FWeaponTableRow>(TEXT("Weapon"), WeaponId);
+	return GetRow<FWeaponTableRow>(TEXT("Weapon"), WeaponId.ToRowName());
 }
 
-FArmorTableRow* UCMSSubsystem::GetArmorRow(FName ArmorId) const
+FArmorTableRow* UCMSSubsystem::GetArmorRow(FArmorId ArmorId) const
 {
-	return GetRow<FArmorTableRow>(TEXT("Armor"), ArmorId);
+	return GetRow<FArmorTableRow>(TEXT("Armor"), ArmorId.ToRowName());
 }
 
-FSkillTableRow* UCMSSubsystem::GetSkillRow(FName SkillId) const
+FSkillTableRow* UCMSSubsystem::GetSkillRow(FSkillId SkillId) const
 {
-	return GetRow<FSkillTableRow>(TEXT("Skill"), SkillId);
+	return GetRow<FSkillTableRow>(TEXT("Skill"), SkillId.ToRowName());
 }
 
-FRecipeTableRow* UCMSSubsystem::GetRecipeRow(FName RecipeId) const
+FRecipeTableRow* UCMSSubsystem::GetRecipeRow(FRecipeId RecipeId) const
 {
-	return GetRow<FRecipeTableRow>(TEXT("Recipe"), RecipeId);
+	return GetRow<FRecipeTableRow>(TEXT("Recipe"), RecipeId.ToRowName());
 }
 
-FFieldTableRow* UCMSSubsystem::GetFieldRow(FName FieldId) const
+FFieldTableRow* UCMSSubsystem::GetFieldRow(FFieldId FieldId) const
 {
-	return GetRow<FFieldTableRow>(TEXT("Field"), FieldId);
+	return GetRow<FFieldTableRow>(TEXT("Field"), FieldId.ToRowName());
 }

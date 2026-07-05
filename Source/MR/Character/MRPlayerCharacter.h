@@ -17,6 +17,9 @@ class UInputAction;
 class UMRGameplayAbility;
 class UMRAbility_Attack;
 class UMRAbility_Dodge;
+class UMRAbility_Carve;
+class UMRInventoryComponent;
+class AMRMonster;
 
 /** 무기 타입 하나에 필요한 모든 어빌리티·애니메이션 설정. BP에서 WeaponConfigs TMap에 등록한다. */
 USTRUCT(BlueprintType)
@@ -89,6 +92,31 @@ public:
 	/** FMRPlayerPersistData를 적용해 레벨 이동 후 상태를 복원한다. */
 	void ApplyPersistData(const FMRPlayerPersistData& Data);
 
+	UMRInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
+	/**
+	 * 박리 가능 사체에 접근했을 때 프롬프트를 표시한다. BP에서 UI 구현.
+	 * AMRMonster::OnCarveVolumeOverlapBegin에서 호출된다.
+	 */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Carving")
+	void ShowCarvePrompt(AMRMonster* Monster);
+
+	/**
+	 * 사체에서 벗어났을 때 프롬프트를 숨긴다. BP에서 UI 구현.
+	 * AMRMonster::OnCarveVolumeOverlapEnd에서 호출된다.
+	 */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Carving")
+	void HideCarvePrompt();
+
+	/** AMRMonster가 오버랩 이벤트에서 호출 — NearestCarvableMonster 설정 */
+	void SetCarvableMonster(AMRMonster* Monster);
+
+	/** AMRMonster가 오버랩 끝 이벤트에서 호출 — NearestCarvableMonster 클리어 */
+	void ClearCarvableMonster(AMRMonster* Monster);
+
+	/** MRAbility_Carve가 ActivateAbility에서 타겟을 조회하는 데 사용 */
+	AMRMonster* GetNearestCarvableMonster() const { return NearestCarvableMonster.Get(); }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -137,6 +165,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> LockOnAction;
 
+	/** F키 — 박리, 채집 등 인터랙션 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> InteractAction;
+
 	/** 무기 타입별 어빌리티·애니메이션 설정. BP에서 각 EMRWeaponType 키에 맞춰 등록. */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TMap<EMRWeaponType, FMRWeaponAbilityConfig> WeaponConfigs;
@@ -167,6 +199,7 @@ private:
 
 	void OnDodgeInput(const FInputActionValue& Value);
 	void OnLockOnInput(const FInputActionValue& Value);
+	void OnInteractInput(const FInputActionValue& Value);
 
 	/** WeaponConfigs에서 해당 무기 타입 설정을 읽어 모든 어빌리티 핸들을 교체 */
 	void SwapWeaponAbilities(EMRWeaponType WeaponType);
@@ -199,10 +232,19 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
 	TSubclassOf<UMRGameplayAbility> LockOnAbilityClass;
 
+	/** BP에서 지정할 Carve 어빌리티 클래스 */
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	TSubclassOf<UMRAbility_Carve> CarveAbilityClass;
+
 	FGameplayAbilitySpecHandle WalkAbilityHandle;
 	FGameplayAbilitySpecHandle SprintAbilityHandle;
 	FGameplayAbilitySpecHandle DodgeAbilityHandle;
 	FGameplayAbilitySpecHandle LockOnAbilityHandle;
+	FGameplayAbilitySpecHandle CarveAbilityHandle;
+
+	/** 현재 오버랩 중인 박리 가능 몬스터. 오버랩 이벤트에서 갱신. */
+	UPROPERTY()
+	TWeakObjectPtr<AMRMonster> NearestCarvableMonster;
 
 	/** 현재 무기 타입에 해당하는 AttackAbility 스펙 핸들 */
 	FGameplayAbilitySpecHandle AttackAbilityHandle;
@@ -221,4 +263,8 @@ private:
 
 	/** 현재 무기 타입에 해당하는 SpecialAbility 스펙 핸들 */
 	FGameplayAbilitySpecHandle SpecialAbilityHandle;
+
+	/** 아이템 인벤토리 컴포넌트. 소재·소비 아이템 관리. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMRInventoryComponent> InventoryComponent;
 };

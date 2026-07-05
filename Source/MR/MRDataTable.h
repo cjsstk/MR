@@ -5,34 +5,11 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "MREnum.h"
+#include "MRStruct.h"
 #include "MRDataTable.generated.h"
 
 class UBehaviorTree;
 class AMRMonster;
-
-/**
- * 드롭 풀 항목 하나. FDropTableRow의 Entries 배열 원소로 사용된다.
- * 확률은 Weight 합산 후 비율로 계산한다 (e.g. Weight=70+30 → 70%, 30%).
- */
-USTRUCT(BlueprintType)
-struct MR_API FDropEntry
-{
-	GENERATED_BODY()
-
-	/** FItemTableRow의 RowName. 미입력 시 해당 항목 무시. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Drop")
-	FName ItemId;
-
-	/** 상대 가중치. 전체 Weight 합 대비 비율로 확률 결정. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Drop", meta = (ClampMin = "1"))
-	int32 Weight = 100;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Drop", meta = (ClampMin = "1"))
-	int32 MinCount = 1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Drop", meta = (ClampMin = "1"))
-	int32 MaxCount = 1;
-};
 
 /**
  * 드롭 테이블 Row. RowName을 FMonsterTableRow에서 참조한다.
@@ -48,20 +25,6 @@ struct MR_API FDropTableRow : public FTableRowBase
 };
 
 // ─── 레시피 ────────────────────────────────────────────────────────────────
-
-/** 제작·강화에 필요한 소재 하나. FRecipeTableRow의 MaterialCosts 배열 원소. */
-USTRUCT(BlueprintType)
-struct MR_API FMaterialCost
-{
-	GENERATED_BODY()
-
-	/** FItemTableRow의 RowName */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Recipe")
-	FName ItemId;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Recipe", meta = (ClampMin = "1"))
-	int32 Count = 1;
-};
 
 /**
  * 제작·강화 레시피 Row. RowName을 FWeaponTableRow/FArmorTableRow에서 RecipeId로 참조한다.
@@ -80,21 +43,6 @@ struct MR_API FRecipeTableRow : public FTableRowBase
 };
 
 // ─── 스킬 ──────────────────────────────────────────────────────────────────
-
-/** 방어구 파츠 하나가 기여하는 스킬 포인트. FArmorTableRow::Skills 배열 원소. */
-USTRUCT(BlueprintType)
-struct MR_API FSkillContribution
-{
-	GENERATED_BODY()
-
-	/** FSkillTableRow의 RowName */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Skill")
-	FName SkillId;
-
-	/** 이 파츠가 기여하는 포인트. 동일 스킬을 합산해 레벨 결정. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Skill", meta = (ClampMin = "1"))
-	int32 Points = 1;
-};
 
 /** 스킬 정의 Row. RowName = 스킬 ID. */
 USTRUCT(BlueprintType)
@@ -152,7 +100,7 @@ struct MR_API FDecorationTableRow : public FTableRowBase
 
 	/** FSkillTableRow의 RowName */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Decoration")
-	FName SkillId;
+	int32 SkillId = 0;
 
 	/** 삽입 가능한 슬롯 최소 크기 (1~3) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Decoration", meta = (ClampMin = "1", ClampMax = "3"))
@@ -205,13 +153,13 @@ struct MR_API FWeaponTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	TArray<int32> JewelSlotSizes;
 
-	/** 강화 트리 부모 무기 RowName. 루트 무기는 비워둔다. */
+	/** 강화 트리 부모 무기 RowName. 루트 무기는 0(비워둔다). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Tree")
-	FName ParentWeaponId;
+	int32 ParentWeaponId = 0;
 
 	/** 이 무기 제작·강화에 필요한 레시피. FRecipeTableRow의 RowName. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Tree")
-	FName RecipeId;
+	int32 RecipeId = 0;
 };
 
 // ─── 방어구 ────────────────────────────────────────────────────────────────
@@ -263,7 +211,7 @@ struct MR_API FArmorTableRow : public FTableRowBase
 
 	/** 이 파츠 제작에 필요한 레시피. FRecipeTableRow의 RowName. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Armor|Tree")
-	FName RecipeId;
+	int32 RecipeId = 0;
 };
 
 /** 몬스터 데이터 테이블 Row. RowName = 몬스터 ID (e.g. "Rathalos") */
@@ -314,11 +262,15 @@ struct MR_API FMonsterTableRow : public FTableRowBase
 
 	/** 일반 사냥(박리) 드롭 풀. FDropTableRow의 RowName. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Drop")
-	FName NormalDropTableId;
+	int32 NormalDropTableId = 0;
 
-	/** 포획 보상 드롭 풀. FDropTableRow의 RowName. 비어있으면 NormalDropTableId 사용. */
+	/** 포획 보상 드롭 풀. FDropTableRow의 RowName. 비어있으면(0) NormalDropTableId 사용. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Drop")
-	FName CaptureDropTableId;
+	int32 CaptureDropTableId = 0;
+
+	/** 몬스터 한 마리당 박리 가능 횟수. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Drop", meta = (ClampMin = "1"))
+	int32 CarveCount = 3;
 
 	// ─── AI ────────────────────────────────────────────────────────────────────
 

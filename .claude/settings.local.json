@@ -45,7 +45,17 @@
       "Bash(Get-ChildItem -Path \"E:\\\\Work\\\\MR\\\\Source\\\\MR\\\\GAS\" -Recurse)",
       "Bash(Get-ChildItem -Path \"E:\\\\Work\\\\MR\\\\Content\\\\Characters\\\\Monsters\\\\DesertDragon\" -Recurse)",
       "Bash(\"E:/UE_5.5/Engine/Build/BatchFiles/Build.bat\" MREditor Win64 Development -Project=\"E:/Work/MR/MR.uproject\" -WaitMutex -FromMsBuild)",
-      "Bash(Get-ChildItem -Path \"E:\\\\Work\\\\MR\\\\Source\\\\MR\\\\AI\" -Recurse -File)"
+      "Bash(Get-ChildItem -Path \"E:\\\\Work\\\\MR\\\\Source\\\\MR\\\\AI\" -Recurse -File)",
+      "Bash(python *)",
+      "Bash(\"E:/UE_5.5/Engine/Build/BatchFiles/Build.bat\" MREditor Win64 Development -project=\"E:/Work/MR/MR.uproject\" -waitmutex)",
+      "Bash(\"E:/UE_5.5/Engine/Build/BatchFiles/Build.bat\" MREditor Win64 Development -project=\"E:/Work/MR/MR.uproject\" -waitmutex -DisableUnity)",
+      "Bash(git rm *)",
+      "Bash(rm -f Source/MR/MRDataTableTypes.h)",
+      "Bash(mv Component/MRPouchComponent.h Component/MRInventoryComponent.h)",
+      "Bash(mv Component/MRPouchComponent.cpp Component/MRInventoryComponent.cpp)",
+      "Bash(mv Store/PouchStore.h Store/InventoryStore.h)",
+      "Bash(mv Store/PouchStore.cpp Store/InventoryStore.cpp)",
+      "Bash(mv Widget/MRPouchWidget.h Widget/MRInventoryWidget.h)"
     ]
   }
 }

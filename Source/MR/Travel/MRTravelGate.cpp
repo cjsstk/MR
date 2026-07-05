@@ -49,12 +49,12 @@ void AMRTravelGate::NotifyActorBeginOverlap(AActor* OtherActor)
 
 	bTravelTriggered = true;
 
-	if (DestinationFieldId.IsNone())
+	if (DestinationFieldId == 0)
 	{
 		TravelSubsystem->RequestReturnToVillage(this);
 	}
 	else
 	{
-		TravelSubsystem->RequestTravel(this, DestinationFieldId);
+		TravelSubsystem->RequestTravel(this, FFieldId(DestinationFieldId));
 	}
 }

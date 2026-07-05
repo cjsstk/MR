@@ -6,27 +6,23 @@
 #include "UObject/NoExportTypes.h"
 #include "StoreBase.generated.h"
 
-class UStoreBase;
-
-/**
- * 스토어 상태 변경 시 브로드캐스트되는 델리게이트.
- *
- * @param Store       변경된 스토어 (여러 스토어를 구독하는 위젯에서 소스 식별용)
- * @param FieldName   변경된 필드명. NAME_None이면 전체 상태가 바뀐 것으로 처리(전체 리프레시)
- */
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStoreStateChanged, UStoreBase*, FName);
+class UActionDispatcher;
 
 /**
  * UStoreBase
  *
  * 실제 데이터를 보유하는 개별 콘텐츠 Store의 기반 클래스.
  * UHUDStore 같은 Store 매니저가 이 클래스를 상속한 Store들을 생성하고 소유한다.
- * 위젯은 UMVVMWidgetBase::BindStore()를 통해 이 Store를 구독한다.
+ *
+ * 이 클래스는 프로젝트에 상관없이 재사용 가능한 최소한의 계약만 정의한다.
+ * 실제 알림 구독(Subscribe/Notify)은 프로젝트 전용 라우팅 키(예: EActionType)가
+ * 필요하므로 이 모듈이 아니라 프로젝트 쪽 중간 베이스(예: MR 모듈의 UMRStoreBase)에서
+ * 구현한다 — UnsubscribeAll만 여기서 virtual로 열어둬서, 위젯 베이스가 구체 타입을
+ * 몰라도 다형적으로 정리를 호출할 수 있게 한다.
  *
  * 사용 방법:
- *   1. 이 클래스를 상속하여 구체적인 Store를 구현한다.
- *   2. 상태를 변경하는 Dispatch* 메서드를 추가하고, 변경 후 NotifyStateChanged()를 호출한다.
- *   3. 필드명은 각 Store 내 namespace 상수로 정의한다 (예: CharacterStoreFields::Health).
+ *   1. 이 클래스를 (직접, 또는 프로젝트 전용 중간 베이스를 통해) 상속해 Store를 구현한다.
+ *   2. 상태 변경 알림 방식은 프로젝트 쪽 중간 베이스의 계약을 따른다.
  */
 UCLASS(Abstract)
 class MRSTORE_API UStoreBase : public UObject
@@ -35,32 +31,17 @@ class MRSTORE_API UStoreBase : public UObject
 
 public:
 	/**
-	 * 이 스토어의 상태 변경 알림을 구독한다.
-	 * 반환된 FDelegateHandle로 이후 Unsubscribe 호출 가능.
-	 * 위젯의 경우 NativeDestruct에서 자동으로 모든 구독이 해제된다.
+	 * 이 Store가 처리할 액션 핸들러를 Dispatcher에 등록한다.
+	 * Action으로 상태를 변경하는 Store는 이를 오버라이드해서 구현한다.
 	 */
-	FDelegateHandle Subscribe(FOnStoreStateChanged::FDelegate&& Delegate);
+	virtual void RegisterActionHandlers(UActionDispatcher* Dispatcher) {}
 
-	/** 특정 핸들의 구독을 해제한다. */
-	void Unsubscribe(FDelegateHandle Handle);
+	/** RegisterActionHandlers에서 등록한 핸들러를 모두 해제한다. */
+	virtual void UnregisterActionHandlers(UActionDispatcher* Dispatcher) {}
 
 	/**
-	 * 특정 오브젝트에 바인딩된 모든 구독을 한 번에 해제한다.
-	 * UMVVMWidgetBase::NativeDestruct에서 자동으로 호출되므로 위젯은 수동 정리 불필요.
-	 *
-	 * @param UserObject  AddUObject로 바인딩할 때 사용한 this 포인터
+	 * 특정 오너가 이 Store를 구독해 등록한 모든 알림을 한 번에 해제한다.
+	 * 알림 구독 기능을 제공하는 서브클래스(예: UMRStoreBase)가 오버라이드해서 구현한다.
 	 */
-	void UnsubscribeAll(const void* UserObject);
-
-protected:
-	/**
-	 * Dispatch* 메서드에서 상태 변경 후 호출한다.
-	 * 구독된 모든 옵저버에게 브로드캐스트한다.
-	 *
-	 * @param FieldName  변경된 필드명. 생략 시 NAME_None(전체 리프레시)
-	 */
-	void NotifyStateChanged(FName FieldName = NAME_None);
-
-private:
-	FOnStoreStateChanged OnStateChanged;
+	virtual void UnsubscribeAll(const void* Owner) {}
 };

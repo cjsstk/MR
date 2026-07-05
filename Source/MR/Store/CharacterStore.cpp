@@ -5,29 +5,28 @@
 
 void UCharacterStore::RegisterActionHandlers(UActionDispatcher* Dispatcher)
 {
-	HealthHandle  = Dispatcher->BindAction(EActionType::SetHealth,
-		FActionHandlerDelegate::CreateUObject(this, &UCharacterStore::HandleSetHealth));
-
-	StaminaHandle = Dispatcher->BindAction(EActionType::SetStamina,
-		FActionHandlerDelegate::CreateUObject(this, &UCharacterStore::HandleSetStamina));
+	Dispatcher->BindAction(MakeActionDelegate(this, &UCharacterStore::HandleSetHealth));
+	Dispatcher->BindAction(MakeActionDelegate(this, &UCharacterStore::HandleSetStamina));
 }
 
 void UCharacterStore::UnregisterActionHandlers(UActionDispatcher* Dispatcher)
 {
-	Dispatcher->UnbindAction(EActionType::SetHealth,  HealthHandle);
-	Dispatcher->UnbindAction(EActionType::SetStamina, StaminaHandle);
+	Dispatcher->UnbindAll(this);
 }
 
-void UCharacterStore::HandleSetHealth(const FAction& Action)
+void UCharacterStore::HandleSetHealth(const FAction_SetHealth& Action)
 {
-	State.MaxHealth     = FMath::Max(Action.Value2, 0.f);
-	State.CurrentHealth = FMath::Clamp(Action.Value1, 0.f, State.MaxHealth);
-	NotifyStateChanged(CharacterStoreFields::Health);
+	State.MaxHealth     = FMath::Max(Action.Max, 0.f);
+	State.CurrentHealth = FMath::Clamp(Action.Current, 0.f, State.MaxHealth);
+
+	// 클램프된 실제 State 값으로 알린다 — Action의 원본 값(클램프 전)을 그대로
+	// 넘기면 구독자가 Store에 실제 반영된 값과 다른 값을 받을 수 있다.
+	Notify(FAction_SetHealth{ State.CurrentHealth, State.MaxHealth });
 }
 
-void UCharacterStore::HandleSetStamina(const FAction& Action)
+void UCharacterStore::HandleSetStamina(const FAction_SetStamina& Action)
 {
-	State.MaxStamina     = FMath::Max(Action.Value2, 0.f);
-	State.CurrentStamina = FMath::Clamp(Action.Value1, 0.f, State.MaxStamina);
-	NotifyStateChanged(CharacterStoreFields::Stamina);
+	State.MaxStamina     = FMath::Max(Action.Max, 0.f);
+	State.CurrentStamina = FMath::Clamp(Action.Current, 0.f, State.MaxStamina);
+	Notify(FAction_SetStamina{ State.CurrentStamina, State.MaxStamina });
 }

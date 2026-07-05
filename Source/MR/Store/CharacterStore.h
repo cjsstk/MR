@@ -3,19 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MRStore/StoreBase.h"
+#include "MRStoreBase.h"
 #include "Action/ActionTypes.h"
 #include "CharacterStore.generated.h"
 
 class UActionDispatcher;
-struct FAction;
-
-/** CharacterStore 필드명 상수. 오타 방지를 위해 raw FName 리터럴 대신 사용한다. */
-namespace CharacterStoreFields
-{
-	inline const FName Health  = TEXT("Health");
-	inline const FName Stamina = TEXT("Stamina");
-}
+struct FAction_SetHealth;
+struct FAction_SetStamina;
 
 USTRUCT(BlueprintType)
 struct FCharacterState
@@ -45,7 +39,7 @@ struct FCharacterState
  *   GetCharacterStore(this)   // Sugar.h
  */
 UCLASS()
-class MR_API UCharacterStore : public UStoreBase
+class MR_API UCharacterStore : public UMRStoreBase
 {
 	GENERATED_BODY()
 
@@ -53,19 +47,15 @@ public:
 	const FCharacterState& GetState() const { return State; }
 
 	/** UHUDStore::Initialize에서 호출. 액션 타입별 핸들러를 Dispatcher에 등록한다. */
-	void RegisterActionHandlers(UActionDispatcher* Dispatcher);
+	virtual void RegisterActionHandlers(UActionDispatcher* Dispatcher) override;
 
 	/** UHUDStore::Deinitialize에서 호출. 등록된 모든 핸들러를 해제한다. */
-	void UnregisterActionHandlers(UActionDispatcher* Dispatcher);
+	virtual void UnregisterActionHandlers(UActionDispatcher* Dispatcher) override;
 
 private:
-	void HandleSetHealth(const FAction& Action);
-	void HandleSetStamina(const FAction& Action);
+	DECLARE_ACTION_HANDLER(HandleSetHealth, SetHealth);
+	DECLARE_ACTION_HANDLER(HandleSetStamina, SetStamina);
 
 	UPROPERTY()
 	FCharacterState State;
-
-	// 핸들러 해제를 위해 바인딩 핸들을 보관
-	FDelegateHandle HealthHandle;
-	FDelegateHandle StaminaHandle;
 };

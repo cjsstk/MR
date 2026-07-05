@@ -15,7 +15,7 @@ void UMRTravelSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 }
 
-void UMRTravelSubsystem::RequestTravel(const UObject* WorldContext, FName FieldId)
+void UMRTravelSubsystem::RequestTravel(const UObject* WorldContext, FFieldId FieldId)
 {
 	if (!WorldContext)
 	{
@@ -36,7 +36,7 @@ void UMRTravelSubsystem::RequestTravel(const UObject* WorldContext, FName FieldI
 		return;
 	}
 
-	CurrentFieldId = FieldId;
+	CurrentFieldId = FieldId.Value;
 	SavePlayerState(WorldContext);
 	ExecuteTravel(WorldContext, FieldRow->MapName);
 }
@@ -48,7 +48,7 @@ void UMRTravelSubsystem::RequestReturnToVillage(const UObject* WorldContext)
 		return;
 	}
 
-	CurrentFieldId = NAME_None;
+	CurrentFieldId = 0;
 	SavePlayerState(WorldContext);
 	ExecuteTravel(WorldContext, UMRTravelSettings::Get()->VillageMapName);
 }

@@ -6,8 +6,10 @@
 #include "MRPlayerCharacter.h"
 #include "MREffect_AttackStaminaCost.h"
 #include "MREffect_AttackDamage.h"
+#include "MRCheatManager.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
+#include "GameFramework/PlayerController.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
@@ -210,7 +212,21 @@ void UMRAbility_Attack::ApplyDamageToTarget(UAbilitySystemComponent* TargetASC)
 	const float MotionValue = ComboMotionValues.IsValidIndex(CurrentComboIndex)
 		? ComboMotionValues[CurrentComboIndex]
 		: 1.0f;
-	const float FinalDamage = -(AttackPower * MotionValue);
+	float FinalDamage = -(AttackPower * MotionValue);
+
+	// 원킬 치트 활성화 시 대상의 MaxHealth만큼 데미지를 입혀 확정 처치한다.
+	if (const AMRPlayerCharacter* PlayerCharacter = GetPlayerCharacter())
+	{
+		const APlayerController* PC = PlayerCharacter->GetController<APlayerController>();
+		const UMRCheatManager* CheatManager = PC ? Cast<UMRCheatManager>(PC->CheatManager) : nullptr;
+		if (CheatManager && CheatManager->IsOneHitKillEnabled())
+		{
+			if (const UMRAttributeSetBase* TargetAttrSet = TargetASC->GetSet<UMRAttributeSetBase>())
+			{
+				FinalDamage = -TargetAttrSet->GetMaxHealth();
+			}
+		}
+	}
 
 	FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 	Context.AddSourceObject(this);

@@ -2,6 +2,7 @@
 
 #include "HUDStore.h"
 #include "CharacterStore.h"
+#include "InventoryStore.h"
 #include "Action/Action.h"
 
 void UHUDStore::Initialize(FSubsystemCollectionBase& Collection)
@@ -13,9 +14,9 @@ void UHUDStore::Initialize(FSubsystemCollectionBase& Collection)
 
 	UCharacterStore* CS = RegisterStore<UCharacterStore>();
 	CS->RegisterActionHandlers(Dispatcher);
-	// 새 Store 추가 시:
-	// UXxxStore* XS = RegisterStore<UXxxStore>();
-	// XS->RegisterActionHandlers(Dispatcher);
+
+	UInventoryStore* PS = RegisterStore<UInventoryStore>();
+	PS->RegisterActionHandlers(Dispatcher);
 }
 
 void UHUDStore::Deinitialize()
@@ -24,9 +25,9 @@ void UHUDStore::Deinitialize()
 	{
 		for (auto& [Class, Store] : Stores)
 		{
-			if (UCharacterStore* CS = Cast<UCharacterStore>(Store))
+			if (Store)
 			{
-				CS->UnregisterActionHandlers(Dispatcher);
+				Store->UnregisterActionHandlers(Dispatcher);
 			}
 		}
 	}
