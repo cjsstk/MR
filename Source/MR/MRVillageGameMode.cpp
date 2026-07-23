@@ -13,26 +13,17 @@ void AMRVillageGameMode::HandleStartingNewPlayer_Implementation(APlayerControlle
 {
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 
-	if (!NewPlayer)
+	if (NewPlayer)
 	{
-		return;
-	}
-
-	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(NewPlayer->GetPawn());
-	if (!Player)
-	{
-		return;
-	}
-
-	UGameInstance* GI = GetGameInstance();
-	if (!GI)
-	{
-		return;
-	}
-
-	UMRTravelSubsystem* TravelSubsystem = GI->GetSubsystem<UMRTravelSubsystem>();
-	if (TravelSubsystem)
-	{
-		TravelSubsystem->RestorePlayerState(Player);
+		if (AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(NewPlayer->GetPawn()))
+		{
+			if (UGameInstance* GI = GetGameInstance())
+			{
+				if (UMRTravelSubsystem* TravelSubsystem = GI->GetSubsystem<UMRTravelSubsystem>())
+				{
+					TravelSubsystem->RestorePlayerState(Player);
+				}
+			}
+		}
 	}
 }

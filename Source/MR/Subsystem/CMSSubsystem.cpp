@@ -48,6 +48,11 @@ FMonsterTableRow* UCMSSubsystem::GetMonsterRow(int32 Type) const
 	return GetRow<FMonsterTableRow>(TEXT("Monster"), FName(FString::FromInt(Type)));
 }
 
+FGatherableTableRow* UCMSSubsystem::GetGatherableRow(int32 Type) const
+{
+	return GetRow<FGatherableTableRow>(TEXT("Gatherable"), FName(FString::FromInt(Type)));
+}
+
 FDropTableRow* UCMSSubsystem::GetDropTableRow(FDropTableId DropTableId) const
 {
 	return GetRow<FDropTableRow>(TEXT("Drop"), DropTableId.ToRowName());

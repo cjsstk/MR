@@ -3,30 +3,24 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ActionTypes.generated.h"
 
 /**
  * 게임에서 사용되는 액션 타입.
- * 새 액션 추가 시 여기에 열거값을 추가하고 Action.h에 DECLARE_ACTION_PAYLOAD를 추가한다.
+ *
+ * 열거값은 ActionList.inl 하나에서 자동 생성된다 — 새 액션 추가 시 여기가 아니라
+ * ActionList.inl에 ACTION(...) 항목 하나만 추가하면 enum·페이로드·매핑이 함께 생긴다.
+ * (enum과 페이로드 목록이 어긋날 수 없게 하기 위한 단일 진실 소스 구조)
+ *
+ * C++ 라우팅 키(템플릿 논타입 인자·TMap 키)로만 쓰이고 UPROPERTY/블루프린트에는
+ * 노출되지 않으므로 UENUM 리플렉션이 필요 없다. 일반 enum class로 두어야
+ * enum 정의 안에서 ActionList.inl을 #include 할 수 있다 (UHT는 .generated.h를
+ * 마지막 include로 강제하므로 UENUM이면 이 X-Macro 구조가 불가능하다).
  */
-UENUM(BlueprintType)
 enum class EActionType : uint8
 {
-	SetHealth,
-	SetStamina,
-
-	// ─── 인벤토리 ──────────────────────────────────────────────────────────────
-	AddInventoryItem,
-	RemoveInventoryItem,
-	UseInventoryItem,
-	SyncInventorySlots,
-	ShowCarveResult,
-
-	// ─── Store 알림 전용 (실제로 Dispatch되지 않고 Store::Notify()에서만 쓰임) ────────
-	// 여러 액션이 하나의 알림으로 모이는 경우(예: Add/Remove/UseInventoryItem이 전부
-	// 슬롯 변경 알림 하나로 모임), 그 알림 자체를 위한 전용 타입.
-	InventorySlotsChanged,
-	InventoryCarveResultChanged,
+#define ACTION(Name, ...) Name,
+#include "ActionList.inl"
+#undef ACTION
 };
 
 /**
@@ -39,19 +33,15 @@ struct TActionTypeOf;
 
 /**
  * ActionName(EActionType의 열거값 이름)만으로 페이로드 struct(FAction_ActionName)를 선언하고
- * 대응하는 EActionType과 연결하는 매크로. 새 액션 추가 시 이 매크로 한 번으로
- * 페이로드 타입 선언 + 라우팅 등록이 끝난다.
+ * 대응하는 EActionType과 연결하는 매크로. 페이로드 타입 선언 + 라우팅 등록을 한 번에 한다.
+ *
+ * 직접 호출하기보다는 ActionList.inl에 ACTION(...) 항목을 추가하는 방식으로 쓴다 —
+ * 그러면 이 매크로(페이로드/매핑)와 EActionType 열거값이 같은 목록에서 함께 생성되어
+ * 서로 어긋나지 않는다. (Action.h가 ActionList.inl을 인클루드하며 이 매크로를 호출한다.)
+ *
  * 이름 있는 팩토리 함수는 따로 만들 필요 없이 MakeAction<TPayload>(...)으로 바로 생성한다
  * (필드 선언 순서대로 애그리게잇 초기화됨).
  * 필드 목록에 콤마가 들어가면 매크로 인자 분리가 깨지므로, 한 줄에 필드 하나씩 세미콜론으로 끝낸다.
- *
- * 사용 예:
- *   DECLARE_ACTION_PAYLOAD(SetHealth,
- *       float Current = 0.f;
- *       float Max = 100.f;
- *   );
- *   ...
- *   Dispatcher->Dispatch(MakeAction<FAction_SetHealth>(80.f, 100.f));
  */
 #define DECLARE_ACTION_PAYLOAD(ActionName, ...) \
 	struct FAction_##ActionName \

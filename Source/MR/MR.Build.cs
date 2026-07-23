@@ -12,7 +12,7 @@ public class MR : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "DeveloperSettings" });
 
-        PrivateIncludePaths.AddRange(new string[] { "MR", "MR/Subsystem", "MR/Widget", "MR/Store", "MR/Action", "MR/Character", "MR/Component", "MR/Animation", "MR/GAS", "MR/GAS/Attribute", "MR/GAS/Ability", "MR/GAS/Effect", "MR/Travel", "MR/Settings", "MR/AI", "MR/Projectile", "MR/Cheat" });
+        PrivateIncludePaths.AddRange(new string[] { "MR", "MR/Subsystem", "MR/Widget", "MR/Store", "MR/Action", "MR/Character", "MR/Component", "MR/Animation", "MR/GAS", "MR/GAS/Attribute", "MR/GAS/Ability", "MR/GAS/Effect", "MR/Travel", "MR/Settings", "MR/AI", "MR/Projectile", "MR/Cheat", "MR/Interface", "MR/Gather" });
 
     }
 }

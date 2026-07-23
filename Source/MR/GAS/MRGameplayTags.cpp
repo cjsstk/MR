@@ -51,7 +51,7 @@ namespace MRGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Monster_FlySpitFireBall, "Ability.Monster.FlySpitFireBall", "몬스터 비행 중 화염구 발사")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Monster_FlySpreadFire,   "Ability.Monster.FlySpreadFire",   "몬스터 비행 중 범위 화염 브레스")
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Carving, "Character.State.Carving", "몬스터 박리 중인 상태 — 이동/공격 차단")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Carve,           "Ability.Carve",           "박리 어빌리티")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Gathering, "Character.State.Gathering", "채집 중인 상태 — 이동/공격 차단")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Gather,            "Ability.Gather",            "채집 어빌리티")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_HealAmount,  "SetByCaller.HealAmount",  "소비 아이템 사용 시 주입하는 회복량")
 }

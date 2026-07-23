@@ -66,3 +66,28 @@ enum class EMRWeaponType : uint8
 	TwoHandedSword	UMETA(DisplayName = "Two-Handed Sword"),
 	Bow				UMETA(DisplayName = "Bow"),
 };
+
+// ─── 채집 이동 정책 ─────────────────────────────────────────────────────────
+
+/**
+ * 채집 중 캐릭터의 이동 처리 방식.
+ * Stationary       : 전신 몽타주 + 이동 입력 차단 (몬스터 박리 등)
+ * MovingUpperBody  : 상체 슬롯 몽타주 + 이동 허용 (광석/식물 채집 등)
+ */
+UENUM(BlueprintType)
+enum class EMRGatherMovementPolicy : uint8
+{
+	Stationary       UMETA(DisplayName = "Stationary (Full Body)"),
+	MovingUpperBody  UMETA(DisplayName = "Moving (Upper Body)"),
+};
+
+// ─── 채집 대상 타입 ─────────────────────────────────────────────────────────
+
+/** 채집 대상 종류. 데이터/사후처리 분기(소멸 vs 리스폰)에 사용. */
+UENUM(BlueprintType)
+enum class EMRGatherType : uint8
+{
+	Monster UMETA(DisplayName = "Monster"),
+	Ore     UMETA(DisplayName = "Ore"),
+	Plant   UMETA(DisplayName = "Plant"),
+};

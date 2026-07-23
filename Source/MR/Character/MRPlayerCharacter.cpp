@@ -14,7 +14,8 @@
 #include "MRAbility_Dodge.h"
 #include "MRAbility_Attack.h"
 #include "MRAbility_LockOn.h"
-#include "GAS/Ability/MRAbility_Carve.h"
+#include "GAS/Ability/MRAbility_Gather.h"
+#include "Interface/MRGatherable.h"
 #include "MRMonster.h"
 #include "MRGameplayTags.h"
 #include "MRAttributeSetBase.h"
@@ -89,9 +90,9 @@ void AMRPlayerCharacter::PossessedBy(AController* NewController)
 		DodgeAbilityHandle  = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(DodgeClass,  1, INDEX_NONE, this));
 		LockOnAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(LockOnClass, 1, INDEX_NONE, this));
 
-		if (CarveAbilityClass)
+		if (GatherAbilityClass)
 		{
-			CarveAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(CarveAbilityClass, 1, INDEX_NONE, this));
+			GatherAbilityHandle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(GatherAbilityClass, 1, INDEX_NONE, this));
 		}
 
 		SwapWeaponAbilities(CurrentWeaponType);
@@ -551,33 +552,35 @@ void AMRPlayerCharacter::OnInteractInput(const FInputActionValue& Value)
 		return;
 	}
 
-	if (!NearestCarvableMonster.IsValid() || !NearestCarvableMonster->CanBeCarved())
+	IMRGatherable* Gatherable = GetNearestGatherable();
+	if (!Gatherable || !Gatherable->CanBeGathered())
 	{
 		return;
 	}
 
-	// 어빌리티 인스턴스에 타겟 몬스터를 전달한 뒤 활성화
-	FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromHandle(CarveAbilityHandle);
+	// 어빌리티 인스턴스에 채집 대상을 전달한 뒤 활성화
+	FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromHandle(GatherAbilityHandle);
 	if (Spec)
 	{
-		if (UMRAbility_Carve* CarveAbility = Cast<UMRAbility_Carve>(Spec->GetPrimaryInstance()))
+		if (UMRAbility_Gather* GatherAbility = Cast<UMRAbility_Gather>(Spec->GetPrimaryInstance()))
 		{
-			CarveAbility->SetTargetMonster(NearestCarvableMonster.Get());
+			GatherAbility->SetTargetGatherable(NearestGatherable.Get());
 		}
 	}
 
-	AbilitySystemComponent->TryActivateAbility(CarveAbilityHandle);
+	AbilitySystemComponent->TryActivateAbility(GatherAbilityHandle);
 }
 
-void AMRPlayerCharacter::SetCarvableMonster(AMRMonster* Monster)
+void AMRPlayerCharacter::SetGatherable(AActor* Gatherable)
 {
-	NearestCarvableMonster = Monster;
+	NearestGatherable = Gatherable;
 }
 
-void AMRPlayerCharacter::ClearCarvableMonster(AMRMonster* Monster)
+void AMRPlayerCharacter::ClearGatherable(AActor* Gatherable)
 {
-	if (NearestCarvableMonster.Get() == Monster)
+	// 현재 대상과 같을 때만 클리어 (다른 대상 오버랩 종료로 유효한 대상을 지우지 않도록)
+	if (NearestGatherable.Get() == Gatherable)
 	{
-		NearestCarvableMonster = nullptr;
+		NearestGatherable = nullptr;
 	}
 }

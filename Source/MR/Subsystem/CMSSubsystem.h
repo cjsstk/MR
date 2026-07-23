@@ -46,6 +46,9 @@ public:
 	/** Monster Row를 Type으로 조회한다. 없으면 nullptr. */
 	FMonsterTableRow* GetMonsterRow(int32 Type) const;
 
+	/** Gatherable Row를 Type으로 조회한다. 없으면 nullptr. */
+	FGatherableTableRow* GetGatherableRow(int32 Type) const;
+
 	/** Drop Table Row를 DropTableId(RowName)로 조회한다. 없으면 nullptr. */
 	FDropTableRow* GetDropTableRow(FDropTableId DropTableId) const;
 

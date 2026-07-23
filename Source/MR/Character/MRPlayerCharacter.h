@@ -7,6 +7,7 @@
 #include "MREnum.h"
 #include "InputActionValue.h"
 #include "AbilitySystemComponent.h"
+#include "Interface/MRGatherable.h"
 #include "Travel/MRTravelTypes.h"
 #include "MRPlayerCharacter.generated.h"
 
@@ -17,9 +18,9 @@ class UInputAction;
 class UMRGameplayAbility;
 class UMRAbility_Attack;
 class UMRAbility_Dodge;
-class UMRAbility_Carve;
+class UMRAbility_Gather;
 class UMRInventoryComponent;
-class AMRMonster;
+class IMRGatherable;
 
 /** 무기 타입 하나에 필요한 모든 어빌리티·애니메이션 설정. BP에서 WeaponConfigs TMap에 등록한다. */
 USTRUCT(BlueprintType)
@@ -95,27 +96,30 @@ public:
 	UMRInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	/**
-	 * 박리 가능 사체에 접근했을 때 프롬프트를 표시한다. BP에서 UI 구현.
-	 * AMRMonster::OnCarveVolumeOverlapBegin에서 호출된다.
+	 * 채집 가능 대상에 접근했을 때 프롬프트를 표시한다. BP에서 UI 구현.
+	 * MRGatherableInteract::EnterRange에서 호출된다.
 	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Carving")
-	void ShowCarvePrompt(AMRMonster* Monster);
+	UFUNCTION(BlueprintImplementableEvent, Category = "Gathering")
+	void ShowGatherPrompt(const FText& InteractionText);
 
 	/**
-	 * 사체에서 벗어났을 때 프롬프트를 숨긴다. BP에서 UI 구현.
-	 * AMRMonster::OnCarveVolumeOverlapEnd에서 호출된다.
+	 * 채집 대상에서 벗어났을 때 프롬프트를 숨긴다. BP에서 UI 구현.
+	 * MRGatherableInteract::ExitRange에서 호출된다.
 	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Carving")
-	void HideCarvePrompt();
+	UFUNCTION(BlueprintImplementableEvent, Category = "Gathering")
+	void HideGatherPrompt();
 
-	/** AMRMonster가 오버랩 이벤트에서 호출 — NearestCarvableMonster 설정 */
-	void SetCarvableMonster(AMRMonster* Monster);
+	/** 채집 대상 오버랩 이벤트에서 호출 — NearestGatherable 설정 */
+	void SetGatherable(AActor* Gatherable);
 
-	/** AMRMonster가 오버랩 끝 이벤트에서 호출 — NearestCarvableMonster 클리어 */
-	void ClearCarvableMonster(AMRMonster* Monster);
+	/** 채집 대상 오버랩 끝 이벤트에서 호출 — NearestGatherable 클리어 */
+	void ClearGatherable(AActor* Gatherable);
 
-	/** MRAbility_Carve가 ActivateAbility에서 타겟을 조회하는 데 사용 */
-	AMRMonster* GetNearestCarvableMonster() const { return NearestCarvableMonster.Get(); }
+	/** UMRAbility_Gather가 ActivateAbility에서 타겟을 조회하는 데 사용 */
+	IMRGatherable* GetNearestGatherable() const { return Cast<IMRGatherable>(NearestGatherable.Get()); }
+
+	/** 현재 채집 대상 액터를 그대로 반환 (어빌리티 타겟 세팅용) */
+	AActor* GetNearestGatherableActor() const { return NearestGatherable.Get(); }
 
 protected:
 	virtual void BeginPlay() override;
@@ -232,19 +236,19 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
 	TSubclassOf<UMRGameplayAbility> LockOnAbilityClass;
 
-	/** BP에서 지정할 Carve 어빌리티 클래스 */
+	/** BP에서 지정할 Gather(채집) 어빌리티 클래스 */
 	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
-	TSubclassOf<UMRAbility_Carve> CarveAbilityClass;
+	TSubclassOf<UMRAbility_Gather> GatherAbilityClass;
 
 	FGameplayAbilitySpecHandle WalkAbilityHandle;
 	FGameplayAbilitySpecHandle SprintAbilityHandle;
 	FGameplayAbilitySpecHandle DodgeAbilityHandle;
 	FGameplayAbilitySpecHandle LockOnAbilityHandle;
-	FGameplayAbilitySpecHandle CarveAbilityHandle;
+	FGameplayAbilitySpecHandle GatherAbilityHandle;
 
-	/** 현재 오버랩 중인 박리 가능 몬스터. 오버랩 이벤트에서 갱신. */
+	/** 현재 오버랩 중인 채집 가능 대상. 오버랩 이벤트에서 갱신. */
 	UPROPERTY()
-	TWeakObjectPtr<AMRMonster> NearestCarvableMonster;
+	TWeakObjectPtr<AActor> NearestGatherable;
 
 	/** 현재 무기 타입에 해당하는 AttackAbility 스펙 핸들 */
 	FGameplayAbilitySpecHandle AttackAbilityHandle;

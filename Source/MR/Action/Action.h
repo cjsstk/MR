@@ -6,57 +6,28 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MRStore/ActionDispatcherBase.h"
 #include "ActionTypes.h"
-#include "Component/MRInventoryComponent.h"
-#include "Subsystem/MRDropHelper.h"
-#include "Action.generated.h"
+// 아래 ActionList.inl의 페이로드가 참조하는 타입 정의 — .generated.h 앞, 페이로드 생성 전에 필요하다.
+#include "Component/MRInventoryComponent.h"	// FMRInventorySlot
+#include "Subsystem/MRDropHelper.h"			// FMRDropResult
 
 // ─── 액션 페이로드 ───────────────────────────────────────────────────────────
-// 새 액션 추가 시: DECLARE_ACTION_PAYLOAD 한 번으로 끝난다.
-// 생성은 MakeAction<FAction_Xxx>(필드값...)으로, 순서대로 애그리게잇 초기화된다.
+// 페이로드 struct(FAction_Xxx)와 TActionTypeOf 매핑은 ActionList.inl 하나에서
+// EActionType 열거값과 함께 자동 생성된다 — 새 액션은 ActionList.inl에 ACTION(...)
+// 항목 하나만 추가하면 되고, enum과 페이로드가 서로 어긋날 수 없다.
+// 생성은 MakeAction<FAction_Xxx>(필드값...)으로, 필드 선언 순서대로 애그리게잇 초기화된다.
 // 예: Dispatcher->Dispatch(MakeAction<FAction_SetHealth>(80.f, 100.f));
+//
+// 페이로드는 일반 struct(비-USTRUCT)이므로 UHT 리플렉션이 필요 없다. 다만 UActionDispatcher가
+// UCLASS라 .generated.h가 필요하고, UHT는 .generated.h를 마지막 include로 강제하므로
+// 페이로드 생성은 반드시 .generated.h include '앞'에서 한다.
+// (TArray<FMRInventorySlot> / FMRDropResult 등 페이로드가 참조하는 타입이 위에서
+//  include 되어 있어야 하므로 enum(ActionTypes.h)과 달리 페이로드 생성은 여기서 한다.)
 
-DECLARE_ACTION_PAYLOAD(SetHealth,
-	float Current = 0.f;
-	float Max = 100.f;
-);
+#define ACTION(Name, ...) DECLARE_ACTION_PAYLOAD(Name, __VA_ARGS__)
+#include "ActionList.inl"
+#undef ACTION
 
-DECLARE_ACTION_PAYLOAD(SetStamina,
-	float Current = 0.f;
-	float Max = 100.f;
-);
-
-// ─── 인벤토리 ──────────────────────────────────────────────────────────────
-
-DECLARE_ACTION_PAYLOAD(AddInventoryItem,
-	int32 ItemId = 0;
-	int32 Count = 0;
-	int32 SlotIndex = INDEX_NONE;
-);
-
-DECLARE_ACTION_PAYLOAD(RemoveInventoryItem,
-	int32 ItemId = 0;
-	int32 Count = 0;
-);
-
-DECLARE_ACTION_PAYLOAD(UseInventoryItem,
-	int32 SlotIndex = INDEX_NONE;
-);
-
-DECLARE_ACTION_PAYLOAD(SyncInventorySlots);
-
-DECLARE_ACTION_PAYLOAD(ShowCarveResult,
-	int32 ItemId = 0;
-	int32 Count = 0;
-);
-
-// InventoryStore 알림 전용 (Add/Remove/UseInventoryItem/SyncInventorySlots가 전부 이 알림 하나로 모인다)
-DECLARE_ACTION_PAYLOAD(InventorySlotsChanged,
-	TArray<FMRInventorySlot> Slots;
-);
-
-DECLARE_ACTION_PAYLOAD(InventoryCarveResultChanged,
-	TArray<FMRDropResult> Items;
-);
+#include "Action.generated.h"
 
 /**
  * UActionDispatcher

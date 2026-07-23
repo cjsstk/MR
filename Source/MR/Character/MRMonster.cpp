@@ -8,10 +8,12 @@
 #include "MRAIController.h"
 #include "MRAttributeSetBase.h"
 #include "MRMonsterHealthBarWidget.h"
-#include "MRAbility_Carve.h"
+#include "MRAbility_Gather.h"
 #include "MRInventoryComponent.h"
 #include "MRDropHelper.h"
 #include "MRPlayerCharacter.h"
+#include "Gather/MRGatherHelper.h"
+#include "Interface/MRGatherable.h"
 #include "Action/Action.h"
 #include "AIController.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -268,22 +270,31 @@ void AMRMonster::DestroyAfterDeath()
 	Destroy();
 }
 
-void AMRMonster::PerformCarve(UMRAbility_Carve* CarveAbility)
+void AMRMonster::GetGatherSpec(FMRGatherSpec& OutSpec) const
+{
+	// 몬스터 박리: 정지 상태에서 전신 몽타주. 몽타주는 어빌리티 기본값(StationaryMontage) 사용.
+	OutSpec.MovementPolicy = EMRGatherMovementPolicy::Stationary;
+	OutSpec.GatherType     = EMRGatherType::Monster;
+	OutSpec.MontageOverride = nullptr;
+	OutSpec.InteractionText = NSLOCTEXT("MR", "CarvePrompt", "박리하기");
+}
+
+void AMRMonster::PerformGather(UMRAbility_Gather* Ability)
 {
 	if (!CanBeCarved())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve 실패: 박리 불가 상태 (IsDead=%d, RemainingCarves=%d)"),
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformGather 실패: 박리 불가 상태 (IsDead=%d, RemainingCarves=%d)"),
 			IsDead(), RemainingCarves);
 		return;
 	}
 
-	if (!CarveAbility)
+	if (!Ability)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve 실패: CarveAbility가 nullptr"));
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformGather 실패: Ability가 nullptr"));
 		return;
 	}
 
-	// CMS에서 드롭 테이블 조회
+	// CMS에서 몬스터 드롭 테이블 ID 조회
 	UCMSSubsystem* CMS = GetGameInstance()->GetSubsystem<UCMSSubsystem>();
 	if (!CMS)
 	{
@@ -293,43 +304,17 @@ void AMRMonster::PerformCarve(UMRAbility_Carve* CarveAbility)
 	const FMonsterTableRow* MonsterRow = CMS->GetMonsterRow(MonsterType);
 	if (!MonsterRow || MonsterRow->NormalDropTableId == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve: MonsterType=%d 드롭 테이블 없음"), MonsterType);
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformGather: MonsterType=%d 드롭 테이블 없음"), MonsterType);
 		return;
 	}
 
-	const FDropTableRow* DropTable = CMS->GetDropTableRow(FDropTableId(MonsterRow->NormalDropTableId));
-	if (!DropTable)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve: DropTableId=%d 테이블 없음"),
-			MonsterRow->NormalDropTableId);
-		return;
-	}
-
-	// 가중치 랜덤으로 아이템 결정
-	const FMRDropResult Result = UMRDropHelper::RollOnce(*DropTable);
+	// 공용 헬퍼로 드롭 계산 + 인벤토리 지급 + 결과 팝업 디스패치
+	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(Ability->GetAvatarActorFromActorInfo());
+	const FMRDropResult Result = UMRGatherHelper::GrantDropToPlayer(Player, FDropTableId(MonsterRow->NormalDropTableId));
 	if (Result.ItemId == 0 || Result.Count <= 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformCarve: RollOnce 결과 없음"));
+		UE_LOG(LogTemp, Warning, TEXT("[MRMonster] PerformGather: 드롭 결과 없음"));
 		return;
-	}
-
-	// 플레이어 인벤토리에 아이템 지급
-	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(CarveAbility->GetAvatarActorFromActorInfo());
-	if (Player)
-	{
-		if (UMRInventoryComponent* Inventory = Player->FindComponentByClass<UMRInventoryComponent>())
-		{
-			Inventory->AddItem(FItemId(Result.ItemId), Result.Count);
-		}
-	}
-
-	// 박리 결과 팝업 표시를 위한 액션 디스패치
-	if (UGameInstance* GI = GetGameInstance())
-	{
-		if (UActionDispatcher* Dispatcher = GI->GetSubsystem<UActionDispatcher>())
-		{
-			Dispatcher->Dispatch(MakeAction<FAction_ShowCarveResult>(Result.ItemId, Result.Count));
-		}
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[MRMonster] %s 박리: ItemId=%d x%d (남은 횟수 %d → %d)"),
@@ -361,14 +346,8 @@ void AMRMonster::OnCarveVolumeOverlapBegin(
 		return;
 	}
 
-	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(OtherActor);
-	if (!Player)
-	{
-		return;
-	}
-
-	Player->ShowCarvePrompt(this);
-	Player->SetCarvableMonster(this);
+	// 프롬프트 표시/대상 등록은 공용 헬퍼에 위임 (내부에서 플레이어 캐스팅·채집 가능 확인)
+	MRGatherableInteract::EnterRange(this, OtherActor);
 }
 
 void AMRMonster::OnCarveVolumeOverlapEnd(
@@ -377,14 +356,7 @@ void AMRMonster::OnCarveVolumeOverlapEnd(
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(OtherActor);
-	if (!Player)
-	{
-		return;
-	}
-
-	Player->HideCarvePrompt();
-	Player->ClearCarvableMonster(this);
+	MRGatherableInteract::ExitRange(this, OtherActor);
 }
 
 void AMRMonster::StartCorpseDestroyTimer(float Delay)

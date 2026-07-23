@@ -10,6 +10,8 @@
 
 class UBehaviorTree;
 class AMRMonster;
+class UStaticMesh;
+class UAnimMontage;
 
 /**
  * 드롭 테이블 Row. RowName을 FMonsterTableRow에서 참조한다.
@@ -22,6 +24,48 @@ struct MR_API FDropTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Drop")
 	TArray<FDropEntry> Entries;
+};
+
+// ─── 채집물 ────────────────────────────────────────────────────────────────
+
+/**
+ * 채집 가능 오브젝트(광석·식물 등) Row. RowName = Type 정수.
+ * 몬스터와 달리 채집 후 소멸하지 않고 RespawnDelay 후 재생성된다.
+ */
+USTRUCT(BlueprintType)
+struct MR_API FGatherableTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	int32 Type = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	EMRGatherType GatherType = EMRGatherType::Ore;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	EMRGatherMovementPolicy MovementPolicy = EMRGatherMovementPolicy::Stationary;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather|Drop")
+	int32 DropTableId = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather", meta = (ClampMin = "1"))
+	int32 GatherCount = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather", meta = (ClampMin = "0"))
+	float RespawnDelay = 60.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	FText InteractionText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	TSoftObjectPtr<UAnimMontage> GatherMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	TSoftObjectPtr<UStaticMesh> Mesh;
 };
 
 // ─── 레시피 ────────────────────────────────────────────────────────────────

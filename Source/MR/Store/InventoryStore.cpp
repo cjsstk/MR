@@ -13,7 +13,7 @@ void UInventoryStore::RegisterActionHandlers(UActionDispatcher* Dispatcher)
 	Dispatcher->BindAction(MakeActionDelegate(this, &UInventoryStore::HandleRemoveInventoryItem));
 	Dispatcher->BindAction(MakeActionDelegate(this, &UInventoryStore::HandleUseInventoryItem));
 	Dispatcher->BindAction(MakeActionDelegate(this, &UInventoryStore::HandleSyncInventorySlots));
-	Dispatcher->BindAction(MakeActionDelegate(this, &UInventoryStore::HandleShowCarveResult));
+	Dispatcher->BindAction(MakeActionDelegate(this, &UInventoryStore::HandleShowGatherResult));
 }
 
 void UInventoryStore::UnregisterActionHandlers(UActionDispatcher* Dispatcher)
@@ -77,26 +77,26 @@ void UInventoryStore::HandleSyncInventorySlots(const FAction_SyncInventorySlots&
 	Notify(FAction_InventorySlotsChanged{ State.Slots });
 }
 
-void UInventoryStore::HandleShowCarveResult(const FAction_ShowCarveResult& Action)
+void UInventoryStore::HandleShowGatherResult(const FAction_ShowGatherResult& Action)
 {
 	FMRDropResult Result;
 	Result.ItemId = Action.ItemId;
 	Result.Count  = Action.Count;
 
 	State.LastAcquiredItems.Add(Result);
-	Notify(FAction_InventoryCarveResultChanged{ State.LastAcquiredItems });
+	Notify(FAction_InventoryGatherResultChanged{ State.LastAcquiredItems });
 
-	UE_LOG(LogTemp, Log, TEXT("UInventoryStore::HandleShowCarveResult: ItemId=%d x%d"),
+	UE_LOG(LogTemp, Log, TEXT("UInventoryStore::HandleShowGatherResult: ItemId=%d x%d"),
 		Result.ItemId, Result.Count);
 
 	// 3초 후 자동 클리어 → 팝업 위젯이 사라진 뒤 상태 정리
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		World->GetTimerManager().SetTimer(CarveResultClearHandle, [this]()
+		World->GetTimerManager().SetTimer(GatherResultClearHandle, [this]()
 		{
 			State.LastAcquiredItems.Empty();
-			Notify(FAction_InventoryCarveResultChanged{ State.LastAcquiredItems });
+			Notify(FAction_InventoryGatherResultChanged{ State.LastAcquiredItems });
 		}, 3.0f, false);
 	}
 }

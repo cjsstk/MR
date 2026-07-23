@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "MRBaseCharacter.h"
+#include "Interface/MRGatherable.h"
 #include "MRMonster.generated.h"
 
 class UWidgetComponent;
 class UMRMonsterHealthBarWidget;
-class UMRAbility_Carve;
+class UMRAbility_Gather;
 class USphereComponent;
 struct FOnAttributeChangeData;
 
@@ -18,7 +19,7 @@ struct FOnAttributeChangeData;
  * MonsterLevel을 기반으로 GameplayEffect를 통해 속성을 스케일링한다.
  */
 UCLASS()
-class MR_API AMRMonster : public AMRBaseCharacter
+class MR_API AMRMonster : public AMRBaseCharacter, public IMRGatherable
 {
 	GENERATED_BODY()
 
@@ -37,11 +38,19 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Monster", meta = (ClampMin = "0.0"))
 	float DeathDestroyDelay = 3.f;
 
+	// ─── IMRGatherable ───────────────────────────────────────────────────────
+
+	/** 채집(박리) 가능 상태인지 */
+	virtual bool CanBeGathered() const override { return CanBeCarved(); }
+
+	/** 채집 스펙(정지형 전신 몽타주, "박리하기" 텍스트)을 채운다. */
+	virtual void GetGatherSpec(FMRGatherSpec& OutSpec) const override;
+
 	/**
 	 * 사체에서 소재를 박리한다. 드롭 계산 + 인벤토리 지급 + 결과 액션 디스패치.
-	 * MRAbility_Carve::OnMontageCompleted에서 호출된다.
+	 * UMRAbility_Gather::OnMontageCompleted에서 호출된다.
 	 */
-	void PerformCarve(UMRAbility_Carve* CarveAbility);
+	virtual void PerformGather(UMRAbility_Gather* Ability) override;
 
 	/** 남은 박리 횟수 */
 	int32 GetRemainingCarves() const { return RemainingCarves; }

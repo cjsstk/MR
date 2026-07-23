@@ -13,9 +13,9 @@ struct FAction_AddInventoryItem;
 struct FAction_RemoveInventoryItem;
 struct FAction_UseInventoryItem;
 struct FAction_SyncInventorySlots;
-struct FAction_ShowCarveResult;
+struct FAction_ShowGatherResult;
 struct FAction_InventorySlotsChanged;
-struct FAction_InventoryCarveResultChanged;
+struct FAction_InventoryGatherResultChanged;
 
 USTRUCT(BlueprintType)
 struct MR_API FInventoryState
@@ -25,7 +25,7 @@ struct MR_API FInventoryState
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FMRInventorySlot> Slots;
 
-	/** 가장 최근 박리/획득 결과. 팝업 표시 후 자동 클리어. */
+	/** 가장 최근 채집/획득 결과. 팝업 표시 후 자동 클리어. */
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FMRDropResult> LastAcquiredItems;
 };
@@ -56,9 +56,9 @@ private:
 	DECLARE_ACTION_HANDLER(HandleRemoveInventoryItem, RemoveInventoryItem);
 	DECLARE_ACTION_HANDLER(HandleUseInventoryItem, UseInventoryItem);
 	DECLARE_ACTION_HANDLER(HandleSyncInventorySlots, SyncInventorySlots);
-	DECLARE_ACTION_HANDLER(HandleShowCarveResult, ShowCarveResult);
+	DECLARE_ACTION_HANDLER(HandleShowGatherResult, ShowGatherResult);
 
 	FInventoryState State;
 
-	FTimerHandle CarveResultClearHandle;
+	FTimerHandle GatherResultClearHandle;
 };
