@@ -53,12 +53,6 @@ void AMRGatherableActor::BeginPlay()
 
 	RemainingGathers = CachedRow->GatherCount;
 
-	// 몽타주 소프트 참조를 동기 로드해 캐시
-	if (!CachedRow->GatherMontage.IsNull())
-	{
-		CachedMontage = CachedRow->GatherMontage.LoadSynchronous();
-	}
-
 	// 메시 소프트 참조가 지정되어 있으면 로드해 반영 (에디터에서 직접 지정하지 않은 경우 대비)
 	if (!CachedRow->Mesh.IsNull())
 	{
@@ -85,7 +79,6 @@ void AMRGatherableActor::GetGatherSpec(FMRGatherSpec& OutSpec) const
 
 	OutSpec.MovementPolicy  = CachedRow->MovementPolicy;
 	OutSpec.GatherType      = CachedRow->GatherType;
-	OutSpec.MontageOverride = CachedMontage;
 	OutSpec.InteractionText = CachedRow->InteractionText;
 }
 

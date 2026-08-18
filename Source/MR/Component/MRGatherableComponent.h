@@ -3,49 +3,29 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "Interface/MRGatherable.h"
-#include "MRGatherableActor.generated.h"
+#include "Components/SceneComponent.h"
+#include "MRGatherableComponent.generated.h"
 
-class UStaticMeshComponent;
-class USphereComponent;
-class UAnimMontage;
-struct FGatherableTableRow;
 
-/**
- * 광석·식물 등 월드에 배치되는 채집 오브젝트.
- * GatherableTableRow(FGatherableTableRow)를 GatherableType으로 조회해 동작이 결정된다.
- * 몬스터 사체와 달리 채집 소진 후 소멸하지 않고 RespawnDelay 후 재생성된다.
- */
-UCLASS()
-class MR_API AMRGatherableActor : public AActor, public IMRGatherable
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+class MR_API UMRGatherableComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
-public:
-	AMRGatherableActor(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
-
-	// ─── IMRGatherable ───────────────────────────────────────────────────────
-
-	virtual bool CanBeGathered() const override { return !bDepleted && RemainingGathers > 0; }
-	virtual void GetGatherSpec(FMRGatherSpec& OutSpec) const override;
-	virtual void PerformGather(UMRAbility_Gather* Ability) override;
+public:	
+	UMRGatherableComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 protected:
 	virtual void BeginPlay() override;
-
-	/** FGatherableTableRow::Type과 매칭되는 채집물 타입 번호 */
-	UPROPERTY(EditAnywhere, Category = "Gather")
-	int32 GatherableType = 0;
-
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	
 private:
-	/** 채집 대상 메시 (루트) */
-	UPROPERTY(VisibleAnywhere, Category = "Gather")
-	TObjectPtr<UStaticMeshComponent> MeshComponent;
-
 	/** 인터랙션 볼륨. 플레이어 접근을 감지해 프롬프트를 띄운다. */
 	UPROPERTY(VisibleAnywhere, Category = "Gather")
 	TObjectPtr<USphereComponent> InteractionVolume;
+
+	UPROPERTY(VisibleAnywhere, Category = "Gather")
+	TObjectPtr<UWidgetComponent> InteractionWidget;
 
 	/** 캐시된 테이블 Row. CMS의 LoadedTables는 게임 수명 동안 유지되므로 포인터 캐시가 안전하다. */
 	const FGatherableTableRow* CachedRow = nullptr;

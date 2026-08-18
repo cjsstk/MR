@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "MRInteractionPromptWidget.generated.h"
 
 /**
@@ -17,7 +18,14 @@ class MR_API UMRInteractionPromptWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	/** 표시할 액션 텍스트 설정 (e.g. "박리") */
+	void SetInteractionInfo(TSoftObjectPtr<UTexture2D> InIcon, const FText& InName);
+	
+protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Prompt")
-	void SetPromptText(const FText& Text);
+	void BP_SetInteractionInfo(TSoftObjectPtr<UTexture2D> InIcon, const FText& InName);
+	
+private:
+	// UPROPERTY(meta = (BindWidget))
+	// TObjectPtr<UTextBlock> InteractionNameText;
+	
 };

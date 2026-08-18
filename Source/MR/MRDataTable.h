@@ -41,7 +41,7 @@ struct MR_API FGatherableTableRow : public FTableRowBase
 	int32 Type = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
-	FText DisplayName;
+	FText InteractionText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
 	EMRGatherType GatherType = EMRGatherType::Ore;
@@ -57,15 +57,12 @@ struct MR_API FGatherableTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather", meta = (ClampMin = "0"))
 	float RespawnDelay = 60.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
-	FText InteractionText;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
-	TSoftObjectPtr<UAnimMontage> GatherMontage;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
 	TSoftObjectPtr<UStaticMesh> Mesh;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gather")
+	TSoftObjectPtr<UTexture2D> Icon;
 };
 
 // ─── 레시피 ────────────────────────────────────────────────────────────────
